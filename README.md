@@ -68,14 +68,8 @@ This API provides real-time aircraft data from airplanes.live. It's free and doe
 #### Airport Configuration
 ```javascript
 const AIRPORTS = {
-    'JFK': {
-        code: 'JFK',
-        name: 'New York JFK',
-        lat: 40.6413,
-        lon: -73.7781,
-        zoom: 10,
-        audio: 'https://s1-bos.liveatc.net/kjfk_twr'
-    },
+    JFK: { name: 'JFK', lat: 40.6413, lon: -73.7781, zoom: 10, audio: 'https://d.liveatc.net/kjfk9_s' },
+    IAD: { name: 'IAD', lat: 38.9531, lon: -77.4565, zoom: 10, audio: 'https://d.liveatc.net/kiad1_7' },
     // ... more airports
 };
 ```
