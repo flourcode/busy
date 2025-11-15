@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
     <title>Busy Towers</title>
     <!-- Imports the Leaflet.js CSS for styling the map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -20,7 +24,8 @@
         
         /* **** NEW: Ensure HTML fills the screen and safe areas **** */
         html {
-            height: 100%;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport - adjusts for browser chrome */
             background: #000;
         }
 
@@ -32,7 +37,10 @@
             overflow: hidden; /* This hides scrollbars */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            height: 100%; /* **** MODIFIED: Make body fill html **** */
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport - adjusts for browser chrome */
+            position: fixed; /* Prevents mobile browser bounce/scroll */
+            width: 100%;
         }
 
         /* This is the map container. It fills the entire screen. */
@@ -41,7 +49,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport - adjusts for browser chrome */
         }
 
         /* This styles the header bar at the top of the screen */
@@ -544,6 +553,18 @@
             document.getElementById('airport-selector').value = currentAirport;
             // Sets the browser tab title
             document.title = "Busy Towers";
+            
+            // Mobile fullscreen: Hide address bar on load
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+            }, 100);
+            
+            // Re-hide address bar on orientation change
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => {
+                    window.scrollTo(0, 1);
+                }, 100);
+            });
             
             // Calls all the other setup functions
             initMap();
