@@ -60,9 +60,10 @@ The application is divided into three main sections:
 
 #### Aircraft Data Source
 ```javascript
-const API_BASE = 'https://api.adsb.lol/v2/';
+const airport = AIRPORTS[currentAirport];
+const response = await fetch(`https://api.airplanes.live/v2/point/${airport.lat}/${airport.lon}/50`);
 ```
-This API provides real-time aircraft data. It's free and doesn't require authentication.
+This API provides real-time aircraft data from airplanes.live. It's free and doesn't require authentication. The API fetches aircraft within 50 nautical miles of the airport coordinates.
 
 #### Airport Configuration
 ```javascript
@@ -312,7 +313,7 @@ for (let i = 0; i >= 0; i--) {  // Essentially no initial trail
 - Common issue: CORS errors (use a web server, not file://)
 
 **Verify API access:**
-- Open https://api.adsb.lol/v2/lat/40.6413/lon/-73.7781/dist/100 in your browser
+- Open https://api.airplanes.live/v2/point/40.6413/-73.7781/50 in your browser
 - You should see JSON data with aircraft information
 
 ### ATC Audio Not Playing
@@ -371,8 +372,8 @@ if (altitude < 5000 || altitude > 40000) return; // Only show aircraft in range
 - Open console to see if fetch requests are happening
 
 **API rate limiting:**
-- The API may rate limit excessive requests
-- Increase update interval to 5-10 seconds
+- The airplanes.live API may rate limit excessive requests
+- Increase update interval to 5-10 seconds if needed
 
 ## Technical Details
 
@@ -386,10 +387,11 @@ if (altitude < 5000 || altitude > 40000) return; // Only show aircraft in range
 ### API Information
 
 **Aircraft Data API:**
-- Provider: adsb.lol (community-run ADS-B aggregator)
+- Provider: airplanes.live (community-run ADS-B aggregator)
 - Update frequency: Real-time
 - Coverage: Global (best in North America and Europe)
 - Rate limits: Generally permissive for personal use
+- Radius: 50 nautical miles from airport coordinates
 
 **Map Tiles:**
 - Provider: CARTO (CartoDB)
@@ -416,7 +418,7 @@ On startup, the app fetches data 5 times rapidly to build initial trail history,
 ## Credits
 
 - **Map Tiles**: CARTO / OpenStreetMap contributors
-- **Aircraft Data**: adsb.lol community and contributors
+- **Aircraft Data**: airplanes.live community and contributors
 - **ATC Audio**: LiveATC.net
 - **Map Library**: Leaflet.js
 
