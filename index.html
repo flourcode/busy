@@ -144,16 +144,18 @@
 
         /* Styles the aircraft type (e.g., "B744") in the info box */
         .aircraft-info .type {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+            font-family: 'Roboto Mono', monospace;
         }
 
         /* This creates the 3-column layout for the stats */
         .aircraft-info .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+            gap: 8px;
         }
 
         .aircraft-info .stat {
@@ -162,7 +164,7 @@
 
         /* Styles the stat numbers (e.g., "3,900 ft") */
         .aircraft-info .stat-value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 500;
             font-variant-numeric: tabular-nums;
             margin-bottom: 2px;
@@ -346,10 +348,10 @@
 
         /* -- Icon Styles -- */
         /* **** MODIFIED: Added a stroke to .icon-comm to match the visual weight **** */
-        .icon-comm  { fill: #0a84ff; stroke: #0a84ff; stroke-width: 2px; } /* Commercial: FILLED + OUTLINE */
-        .icon-ga    { fill: none; stroke: #30d158; stroke-width: 2px; } /* GA: OUTLINE */
-        .icon-mil   { fill: none; stroke: #ff375f; stroke-width: 2px; } /* Military: OUTLINE */
-        .icon-other { fill: none; stroke: #a2a2d2; stroke-width: 2px; } /* Other: OUTLINE */
+        .icon-comm  { fill: #0a84ff; stroke: #0a84ff; stroke-width: 1px; } /* Commercial: FILLED + OUTLINE */
+        .icon-ga    { fill: none; stroke: #30d158; stroke-width: 1px; } /* GA: OUTLINE */
+        .icon-mil   { fill: none; stroke: #ff375f; stroke-width: 1px; } /* Military: OUTLINE */
+        .icon-other { fill: none; stroke: #a2a2d2; stroke-width: 1px; } /* Other: OUTLINE */
         .icon-heli  { color: #ff9f0a; } /* Helicopter: TEXT COLOR */
 
 
