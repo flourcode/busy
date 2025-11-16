@@ -8,7 +8,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
     <title>Busy Towers</title>
-    <!-- Imports the Leaflet.js CSS for styling the map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* Imports our custom fonts from Google Fonts */
@@ -274,6 +273,33 @@
             font-weight: 500;
         }
 
+        /*
+         * **** MODIFIED: Theme Toggle Button ****
+         * This styles the new Day/Night toggle button
+        */
+        .theme-toggle {
+            position: fixed;
+            bottom: 160px; /* Positioned above the recenter button */
+            left: 32px;
+            background: #111;
+            border: 0.5px solid #333;
+            border-radius: 12px;
+            padding: 10px 16px; /* Adjusted padding for text */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 900;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px; /* Matched recenter button */
+            font-weight: 500; /* Matched recenter button */
+        }
+
+        .theme-toggle:hover {
+            background: #222;
+            transform: translateY(-2px);
+        }
+        /* **** END MODIFIED **** */
+
+
         /* This styles the "Recenter" button */
         .recenter-button {
             position: fixed;
@@ -321,7 +347,11 @@
             transition: stroke 0.5s ease;
         }
 
-        /* This styles the map attribution (e.g., "© OpenStreetMap") */
+        /*
+         * **** MODIFIED: Map Attribution ****
+         * This styles the map attribution (e.g., "© OpenStreetMap")
+         * It now supports both light and dark modes.
+        */
         .leaflet-control-attribution {
             background: rgba(0, 0, 0, 0.5) !important;
             color: rgba(255, 255, 255, 0.5) !important;
@@ -333,6 +363,16 @@
         .leaflet-control-attribution a {
             color: rgba(255, 255, 255, 0.7) !important;
         }
+
+        /* This rule overrides the attribution for the light theme */
+        body.theme-light .leaflet-control-attribution {
+            background: rgba(255, 255, 255, 0.7) !important;
+            color: rgba(0, 0, 0, 0.7) !important;
+        }
+        body.theme-light .leaflet-control-attribution a {
+            color: #000 !important;
+        }
+
 
         /*
          * **** MODIFICATION: AIRCRAFT TYPE COLORS & STYLES ****
@@ -375,6 +415,14 @@
                 padding: 10px 16px;
                 font-size: 13px;
             }
+            
+            /* **** MODIFIED: Position theme toggle on mobile **** */
+            .theme-toggle {
+                bottom: 140px; /* Stacked above recenter */
+                left: 20px;
+                padding: 8px 14px; /* Matched recenter button */
+                font-size: 12px;
+            }
 
             .recenter-button {
                 bottom: 80px;
@@ -405,18 +453,12 @@
     </style>
 </head>
 <body>
-    <!-- This is the top header bar -->
     <div id="header">
         <div class="logo">
             <span>Busy Towers</span>
             <span class="count" id="aircraft-count">• 0 aircraft</span>
         </div>
         
-        <!--
-         * MODIFICATION: AIRPORT DROPDOWN
-         * This is the list of airports. To add a new one, you must also
-         * add it to the `AIRPORTS` list in the <script> tag below.
-        -->
         <select id="airport-selector" class="airport-selector">
             <option value="JFK" selected>JFK</option>
 			<option value="ATL">ATL</option>
@@ -424,17 +466,11 @@
             <option value="LAX">LAX</option>
             <option value="SEA">SEA</option>
             <option value="IAD">IAD</option>
-            <!-- <option value="YOUR_CODE">Your Airport</option> -->
-        </select>
+            </select>
     </div>
 
-    <!-- This empty div is where the Leaflet map will be injected by JavaScript -->
     <div id="map"></div>
 
-    <!--
-     * **** UPDATED: Legend will automatically reflect the new .icon-comm style ****
-     * This HTML explains the new color-coding system.
-    -->
     <div class="legend">
         <div class="title">Aircraft Type</div>
         <div class="item">
@@ -456,24 +492,20 @@
             <div class="label">Military</div>
         </div>
         <div class="item">
-            <!-- This is the new standard infinity symbol -->
             <span class="icon-text icon-heli">&infin;</span>
             <div class="label">Helicopter</div>
         </div>
     </div>
 
 
-    <!-- This is the "Recenter" button -->
-    <div id="recenter-button" class="recenter-button">
-        <span>📍</span>
-        <span>Recenter</span>
+    <div id="theme-toggle" class="theme-toggle" title="Toggle Map Theme">
+        <span id="theme-toggle-text">Day</span>
     </div>
 
-    <!--
-     * This is the aircraft info box. It's hidden by default.
-     * The `id` tags (e.g., "info-callsign") are used by JavaScript
-     * to fill in the data for the selected plane.
-    -->
+    <div id="recenter-button" class="recenter-button">
+        <span>RECENTER</span>
+    </div>
+
     <div id="aircraft-info" class="aircraft-info">
         <div class="callsign" id="info-callsign">—</div>
         <div class="type" id="info-type">—</div>
@@ -493,7 +525,6 @@
         </div>
     </div>
 
-    <!-- This is the "Listen to ATC" button -->
     <div id="audio-control" class="audio-control">
         <svg id="audio-icon" viewBox="0 0 24 24">
             <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
@@ -501,10 +532,8 @@
         <span id="audio-text">Listen to ATC</span>
     </div>
 
-    <!-- This invisible <audio> element is used to play the ATC stream -->
     <audio id="audio" preload="none"></audio>
 
-    <!-- Imports the Leaflet.js library, which powers the map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // --- SECTION 1: GLOBAL SETTINGS & VARIABLES ---
@@ -525,6 +554,14 @@
             LAX: { name: 'LAX', lat: 33.9416, lon: -118.4085, zoom: 10, audio: 'https://d.liveatc.net/klax6' },
 			SEA: { name: 'SEA', lat: 47.4502, lon: -122.3088, zoom: 10, audio: 'https://d.liveatc.net/ksea3_gnd' }
         };
+        
+        /*
+         * **** UPDATED: Map Tile URLs ****
+         * Changed the LIGHT_MAP_URL to the standard OpenStreetMap.
+        */
+        const LIGHT_MAP_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const DARK_MAP_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
 
         // **** UPDATED: We only need one plane icon path now ****
         // This is the standard commercial airliner icon
@@ -532,9 +569,11 @@
 
         // This variable keeps track of which airport is currently selected
         let currentAirport = 'JFK'; // Default airport on load
+        let currentTheme = 'dark';  // Default theme on load
 
         // These variables are placeholders to store our map and aircraft data
         let map; // The Leaflet map object
+        let tileLayer; // The Leaflet tile layer object
         let aircraftData = new Map(); // Stores the raw data for all aircraft
         let markers = new Map();      // Stores the clickable icon (marker) for each aircraft
         let trails = new Map();       // Stores the path (trail) for each aircraft
@@ -579,6 +618,9 @@
             
             // Connects the "Recenter" button to its function
             document.getElementById('recenter-button').addEventListener('click', recenterView);
+
+            // **** NEW: Connect the Theme Toggle button ****
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
         }
 
         /**
@@ -598,14 +640,14 @@
 
             /*
              * MODIFICATION: MAP TILES
-             * This line controls the map's appearance.
-             * You can swap the URL to use a different map style.
-             * e.g., 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+             * This now uses the global `tileLayer` variable so we
+             * can change the URL later.
             */
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            tileLayer = L.tileLayer(DARK_MAP_URL, {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
-            }).addTo(map);
+            });
+            tileLayer.addTo(map);
 
             // Create the white circle icon for the airport
             const airportIcon = L.divIcon({
@@ -631,6 +673,25 @@
             document.getElementById('airport-selector').addEventListener('change', (e) => {
                 changeAirport(e.target.value);
             });
+        }
+        
+        /**
+         * **** MODIFIED: Theme Toggle Function ****
+         * Toggles the map theme and updates the button text.
+         */
+        function toggleTheme() {
+            const themeText = document.getElementById('theme-toggle-text');
+            if (currentTheme === 'dark') {
+                currentTheme = 'light';
+                tileLayer.setUrl(LIGHT_MAP_URL); // Set to light map URL
+                document.body.classList.add('theme-light'); // Add class for CSS
+                themeText.textContent = 'DARK'; // Update button text
+            } else {
+                currentTheme = 'dark';
+                tileLayer.setUrl(DARK_MAP_URL); // Set to dark map URL
+                document.body.classList.remove('theme-light'); // Remove class
+                themeText.textContent = 'LIGHT'; // Update button text
+            }
         }
 
         /**
@@ -821,7 +882,7 @@
                 } else if (category === 'A1' || category === 'A2') { // A1/A2 is General Aviation
                     iconClass = 'icon-ga';
                     trailClass = 'trail-ga';
-                } else if (category === 'A3' || category === 'A4' || category === 'A5') { // Commercial
+                } else if (category === 'A3' || category ==="A4" || category === 'A5') { // Commercial
                     iconClass = 'icon-comm';
                     trailClass = 'trail-comm';
                 } else { // All others
