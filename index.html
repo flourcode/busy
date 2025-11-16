@@ -76,7 +76,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: color 0.3s ease; /* Smooth theme transition */
         }
 
         /* This styles the "• X aircraft" count */
@@ -85,7 +84,6 @@
             font-weight: 500;
             color: rgba(255, 255, 255, 0.6);
             font-family: 'Roboto Mono', monospace; /* Uses our special "data" font */
-            transition: color 0.3s ease; /* Smooth theme transition */
         }
 
         /* This styles the airport dropdown selector */
@@ -99,7 +97,7 @@
             font-weight: 500;
             cursor: pointer;
             outline: none;
-            transition: all 0.3s ease; /* Smooth theme transition */
+            transition: all 0.2s ease;
         }
 
         .airport-selector:hover {
@@ -396,72 +394,6 @@
         .icon-other { fill: none; stroke: #a2a2d2; stroke-width: 1px; } /* Other: OUTLINE */
         .icon-heli  { color: #ff9f0a; } /* Helicopter: TEXT COLOR */
 
-        
-        /*
-         * **** NEW: Light Theme Overrides ****
-        */
-
-        /* Header Text */
-        body.theme-light .logo {
-            color: rgba(0, 0, 0, 0.9);
-        }
-        body.theme-light .logo .count {
-            color: rgba(0, 0, 0, 0.6);
-        }
-
-        /* Airport Dropdown */
-        body.theme-light .airport-selector {
-            background: #f0f0f0;
-            border-color: #aaa;
-            color: #000;
-        }
-        
-        body.theme-light .airport-selector:hover {
-            background: #e0e0e0;
-        }
-
-        /* Airport Marker (on-map) */
-        .airport-marker-wrapper {
-            text-align: center;
-        }
-        .airport-marker-svg .marker-outer-ring {
-            fill: rgba(255, 255, 255, 0.15);
-            stroke: rgba(255, 255, 255, 0.9);
-            transition: all 0.3s ease; /* Smooth theme transition */
-        }
-        .airport-marker-svg .marker-inner-dot {
-            fill: rgba(255, 255, 255, 0.9);
-            transition: all 0.3s ease; /* Smooth theme transition */
-        }
-        .airport-marker-label {
-            background: #111;
-            border: 0.5px solid #333;
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 6px;
-            margin-top: 2px;
-            white-space: nowrap;
-            transition: all 0.3s ease; /* Smooth theme transition */
-        }
-
-        /* Light mode overrides for marker */
-        body.theme-light .airport-marker-svg .marker-outer-ring {
-            fill: rgba(0, 0, 0, 0.1);
-            stroke: rgba(0, 0, 0, 0.8);
-        }
-        body.theme-light .airport-marker-svg .marker-inner-dot {
-            fill: rgba(0, 0, 0, 0.8);
-        }
-        body.theme-light .airport-marker-label {
-            background: #fff;
-            border-color: #aaa;
-            color: #000;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        /* **** END NEW **** */
-
 
         /* These styles make the UI responsive on smaller (mobile) screens */
         @media (max-width: 768px) {
@@ -717,14 +649,17 @@
             });
             tileLayer.addTo(map);
 
-            
-            /*
-             * **** MODIFIED: Airport Icon ****
-             * Replaced multi-line template literal with a single-line string
-             * to fix the "unescaped line break" syntax error.
-            */
+            // Create the white circle icon for the airport
             const airportIcon = L.divIcon({
-                html: '<div class="airport-marker-wrapper"><svg class="airport-marker-svg" width="32" height="32" viewBox="0 0 32 32"><circle class="marker-outer-ring" cx="16" cy="16" r="12" stroke-width="2"/><circle class="marker-inner-dot" cx="16" cy="16" r="4"/></svg><div class="airport-marker-label">' + airport.name + '</div></div>',
+                html: `
+                    <div style="text-align: center;">
+                        <svg width="32" height="32" viewBox="0 0 32 32">
+                            <circle cx="16" cy="16" r="12" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+                            <circle cx="16" cy="16" r="4" fill="rgba(255,255,255,0.9)"/>
+                        </svg>
+                        <div style="background: #111; border: 0.5px solid #333; color: white; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; margin-top: 2px; white-space: nowrap;">${airport.name}</div>
+                    </div>
+                `,
                 className: '',
                 iconSize: [80, 60],
                 iconAnchor: [40, 30]
@@ -750,12 +685,12 @@
                 currentTheme = 'light';
                 tileLayer.setUrl(LIGHT_MAP_URL); // Set to light map URL
                 document.body.classList.add('theme-light'); // Add class for CSS
-                themeText.textContent = 'NIGHT'; // Update button text
+                themeText.textContent = 'DARK'; // Update button text
             } else {
                 currentTheme = 'dark';
                 tileLayer.setUrl(DARK_MAP_URL); // Set to dark map URL
                 document.body.classList.remove('theme-light'); // Remove class
-                themeText.textContent = 'DAY'; // Update button text
+                themeText.textContent = 'LIGHT'; // Update button text
             }
         }
 
@@ -776,13 +711,17 @@
                 map.removeLayer(airportMarker);
             }
             
-            /*
-             * **** MODIFIED: Airport Icon ****
-             * Replaced multi-line template literal with a single-line string
-             * to fix the "unescaped line break" syntax error.
-            */
+            // Create a new marker for the new airport
             const airportIcon = L.divIcon({
-                html: '<div class="airport-marker-wrapper"><svg class="airport-marker-svg" width="32" height="32" viewBox="0 0 32 32"><circle class="marker-outer-ring" cx="16" cy="16" r="12" stroke-width="2"/><circle class="marker-inner-dot" cx="16" cy="16" r="4"/></svg><div class="airport-marker-label">' + airport.name + '</div></div>',
+                html: `
+                    <div style="text-align: center;">
+                        <svg width="32" height="32" viewBox="0 0 32 32">
+                            <circle cx="16" cy="16" r="12" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+                            <circle cx="16" cy="16" r="4" fill="rgba(255,255,255,0.9)"/>
+                        </svg>
+                        <div style="background: #111; border: 0.5px solid #333; color: white; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; margin-top: 2px; white-space: nowrap;">${airport.name}</div>
+                    </div>
+                `,
                 className: '',
                 iconSize: [80, 60],
                 iconAnchor: [40, 30]
