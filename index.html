@@ -4,1118 +4,1469 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
-    <title>Busy Towers</title>
+    <meta name="theme-color" content="#171c1b">
+    <title>DIY OPS</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        /* Imports our custom fonts from Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        /* Basic page reset */
+        /* --- CORE RESET & LAYOUT --- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         
-        /* **** NEW: Ensure HTML fills the screen and safe areas **** */
-        html {
+        html, body {
             height: 100vh;
-            height: 100dvh; /* Dynamic viewport - adjusts for browser chrome */
-            background: #000;
-        }
-
-        /* Sets the default font, background color, and prevents scrolling */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', sans-serif;
-            background: #000;
-            color: #fff;
-            overflow: hidden; /* This hides scrollbars */
+            height: 100dvh;
+            /* Dark background from image */
+            background: #171c1b; 
+            font-family: 'Rajdhani', sans-serif;
+            /* Light gray text */
+            color: #d1d4d3; 
+            overflow: hidden;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            height: 100vh;
-            height: 100dvh; /* Dynamic viewport - adjusts for browser chrome */
-            position: fixed; /* Prevents mobile browser bounce/scroll */
-            width: 100%;
         }
 
-        /* This is the map container. It fills the entire screen. */
         #map {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100vh;
-            height: 100dvh; /* Dynamic viewport - adjusts for browser chrome */
+            z-index: 0;
         }
 
-        /* This styles the header bar at the top of the screen */
-        #header {
+        /* --- HEADER COMPONENTS --- */
+        .header-info {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000; /* Ensures the header is above the map */
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
-            padding: 24px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: opacity 0.5s ease;
+            top: 16px;
+            left: 16px;
+            z-index: 1000;
         }
 
-        /* This styles the "Busy Towers" title */
-        .logo {
-            font-size: 17px;
-            font-weight: 600;
-            letter-spacing: -0.4px;
-            color: rgba(255, 255, 255, 0.95);
+        .mission-id {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: rgba(209, 212, 211, 0.6);
+            letter-spacing: 1.5px;
+            margin-bottom: 2px;
+        }
+
+        .location-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            /* Green shadow */
+            text-shadow: 0 0 20px rgba(0, 163, 110, 0.5); 
+        }
+
+        .header-controls {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .location-badge {
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(0, 163, 110, 0.3);
+            padding: 6px 16px;
             display: flex;
             align-items: center;
             gap: 8px;
+            clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
         }
 
-        /* This styles the "• X aircraft" count */
-        .logo .count {
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.6);
-            font-family: 'Roboto Mono', monospace; /* Uses our special "data" font */
+        .location-icon {
+            width: 6px;
+            height: 6px;
+            background: #00a36e; /* Accent Green */
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+            animation: pulse-location 2s ease-in-out infinite;
         }
 
-        /* This styles the airport dropdown selector */
-        .airport-selector {
-            background: #111;
-            border: 0.5px solid #333;
-            border-radius: 10px;
-            padding: 8px 16px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: 500;
+        @keyframes pulse-location {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .location-selector {
+            background: rgba(23, 28, 27, 0.95);
+            border: none;
+            color: #00a36e; /* Accent Green */
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
             cursor: pointer;
             outline: none;
+            text-transform: uppercase;
+            padding: 0;
+            margin: 0;
+            min-width: 45px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .location-selector option {
+            background: #171c1b;
+            color: #00a36e;
+            padding: 8px;
+        }
+
+        .radar-control {
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(209, 212, 211, 0.1);
+            padding: 6px 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: rgba(209, 212, 211, 0.6);
+            letter-spacing: 1px;
+            cursor: pointer;
+            clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%, 0 4px);
             transition: all 0.2s ease;
         }
 
-        .airport-selector:hover {
-            background: #222;
+        .radar-control:hover {
+            border-color: #00a36e;
+            color: #ffffff;
         }
 
-        /* This styles the options inside the dropdown */
-        .airport-selector option {
-            background: #1c1c1e;
+        .radar-control.active {
+            border-color: #00a36e;
+            color: #00a36e;
+            background: rgba(23, 28, 27, 0.95);
+            box-shadow: 0 0 15px rgba(0, 163, 110, 0.2);
+            text-shadow: 0 0 5px rgba(0, 163, 110, 0.5);
         }
 
-        /* This styles the pop-up info box for the selected aircraft */
-        .aircraft-info {
+        .time-display {
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(209, 212, 211, 0.1);
+            padding: 6px 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: rgba(209, 212, 211, 0.6);
+            letter-spacing: 1px;
+            clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+        }
+
+        /* --- LEFT SIDEBAR (METRICS) --- */
+        .metrics-panel {
             position: fixed;
-            bottom: 32px;
-            left: 50%;
-            transform: translateX(-50%); /* This centers the box */
-            background: #111;
-            border: 0.5px solid #333;
-            border-radius: 16px;
-            padding: 20px 28px;
-            min-width: 320px;
-            opacity: 0; /* Hidden by default */
-            pointer-events: none; /* Can't be clicked when hidden */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            left: 16px;
+            top: 80px;
             z-index: 900;
+            width: 160px;
         }
 
-        /* This class is added by JavaScript to show the info box */
-        .aircraft-info.visible {
+        .metric-block {
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(209, 212, 211, 0.1);
+            margin-bottom: 2px;
+            padding: 12px;
+            position: relative;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+        }
+
+        .metric-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-top: 1px solid rgba(209, 212, 211, 0.1);
+            border-right: 1px solid rgba(209, 212, 211, 0.1);
+        }
+
+        .metric-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: rgba(209, 212, 211, 0.6);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1;
+            letter-spacing: 1px;
+        }
+
+        .metric-subtext {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 8px;
+            color: rgba(209, 212, 211, 0.3);
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Semantic colors for data values */
+        .metric-block.aircraft .metric-value { color: #00d9ff; text-shadow: 0 0 10px rgba(0, 217, 255, 0.3); }
+        .metric-block.vessels .metric-value { color: #00a36e; text-shadow: 0 0 10px rgba(0, 163, 110, 0.3); }
+        .metric-block.incidents .metric-value { color: #ff0064; text-shadow: 0 0 10px rgba(255, 0, 100, 0.3); }
+
+        /* --- RIGHT SIDEBAR (LEGEND) --- */
+        .legend-panel {
+            position: fixed;
+            right: 16px;
+            top: 80px;
+            z-index: 900;
+            width: 180px;
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(209, 212, 211, 0.1);
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+        }
+
+        .legend-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 10px;
+            height: 10px;
+            border-top: 1px solid rgba(209, 212, 211, 0.1);
+            border-left: 1px solid rgba(209, 212, 211, 0.1);
+        }
+
+        .legend-header {
+            padding: 12px;
+            border-bottom: 1px solid rgba(209, 212, 211, 0.1);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: rgba(209, 212, 211, 0.5);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .legend-content {
+            padding: 12px;
+        }
+
+        .legend-section {
+            margin-bottom: 20px;
+        }
+
+        .legend-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-section-title {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: rgba(209, 212, 211, 0.4);
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            padding-left: 8px;
+            border-left: 2px solid rgba(0, 163, 110, 0.3);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: rgba(209, 212, 211, 0.6);
+            font-weight: 500;
+        }
+
+        .legend-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .legend-icon svg {
+            filter: drop-shadow(0 0 1px currentColor);
+        }
+
+        /* --- BOTTOM INFO PANEL --- */
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 900;
+            background: rgba(23, 28, 27, 0.98);
+            border: 1px solid rgba(0, 163, 110, 0.3);
+            width: 600px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+        }
+
+        .info-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border-top: 1px solid rgba(0, 163, 110, 0.3);
+            border-left: 1px solid rgba(0, 163, 110, 0.3);
+        }
+
+        .info-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            border-bottom: 1px solid rgba(0, 163, 110, 0.3);
+            border-right: 1px solid rgba(0, 163, 110, 0.3);
+        }
+
+        .info-panel.visible {
             opacity: 1;
             pointer-events: all;
         }
 
-        /* Styles the callsign (e.g., "CKS813") in the info box */
-        .aircraft-info .callsign {
+        .info-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(209, 212, 211, 0.1);
+        }
+
+        .info-title {
+            font-family: 'Rajdhani', sans-serif;
             font-size: 24px;
-            font-weight: 500;
-            letter-spacing: -0.5px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 2px;
             margin-bottom: 4px;
-            font-family: 'Roboto Mono', monospace;
         }
 
-        /* Styles the aircraft type (e.g., "B744") in the info box */
-        .aircraft-info .type {
-            font-size: 18px;
-            font-weight: 500;
-            letter-spacing: -0.5px;
-            margin-bottom: 4px;
-            font-family: 'Roboto Mono', monospace;
+        .info-subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: rgba(209, 212, 211, 0.4);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
 
-        /* This creates the 3-column layout for the stats */
-        .aircraft-info .stats {
+        .info-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            gap: 0;
         }
 
-        .aircraft-info .stat {
+        .info-stats-2col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+        }
+
+        .info-stat {
+            padding: 20px;
             text-align: center;
+            border-right: 1px solid rgba(209, 212, 211, 0.05);
+            border-bottom: 1px solid rgba(209, 212, 211, 0.05);
         }
 
-        /* Styles the stat numbers (e.g., "3,900 ft") */
-        .aircraft-info .stat-value {
-            font-size: 18px;
-            font-weight: 500;
-            font-variant-numeric: tabular-nums;
-            margin-bottom: 2px;
-            font-family: 'Roboto Mono', monospace;
+        .info-stat:last-child {
+            border-right: none;
         }
 
-        /* Styles the stat labels (e.g., "Altitude") */
-        .aircraft-info .stat-label {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
+        .info-stat-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #00a36e;
+            margin-bottom: 4px;
+            text-shadow: 0 0 10px rgba(0, 163, 110, 0.3);
+        }
+
+        .info-stat-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            color: rgba(209, 212, 211, 0.4);
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        /* This styles the "Listen to ATC" button */
+        /* --- FOOTER CONTROLS --- */
         .audio-control {
             position: fixed;
-            bottom: 32px;
-            left: 32px;
-            background: #111;
-            border: 0.5px solid #333;
-            border-radius: 12px;
-            padding: 12px 20px;
+            bottom: 20px;
+            left: 20px;
+            z-index: 900;
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(209, 212, 211, 0.1);
+            padding: 12px 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            z-index: 900;
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+        }
+
+        .audio-control::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-top: 1px solid rgba(209, 212, 211, 0.1);
+            border-right: 1px solid rgba(209, 212, 211, 0.1);
         }
 
         .audio-control:hover {
-            background: #222;
-            transform: translateY(-2px);
+            border-color: rgba(0, 163, 110, 0.3);
         }
 
-        /* This class is added by JavaScript when audio is playing */
         .audio-control.playing {
-            background: rgba(0, 122, 255, 0.9);
-            border-color: rgba(0, 122, 255, 0.3);
-            color: #fff;
+            border-color: rgba(0, 163, 110, 0.6);
+            background: rgba(23, 28, 27, 0.95);
         }
 
         .audio-control svg {
             width: 16px;
             height: 16px;
-            fill: currentColor;
+            fill: rgba(209, 212, 211, 0.6);
         }
 
-        /* This styles the legend box in the top-right */
-        .legend {
-            position: fixed;
-            top: 90px;
-            right: 32px;
-            background: #111;
-            border: 0.5px solid #333;
-            border-radius: 12px;
-            padding: 16px;
-            z-index: 900;
-            min-width: 160px;
+        .audio-control.playing svg {
+            fill: #00a36e;
         }
 
-        .legend .title {
+        .audio-text {
+            font-family: 'Share Tech Mono', monospace;
             font-size: 11px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(209, 212, 211, 0.6);
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
         }
 
-        .legend .item {
+        .audio-control.playing .audio-text {
+            color: #00a36e;
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 900;
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(209, 212, 211, 0.1);
+            padding: 12px 16px;
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 8px;
-            font-size: 13px;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
         }
 
-        .legend .item:last-child {
-            margin-bottom: 0;
-        }
-        
-        /* Styles for the icons in the new legend */
-        .legend .icon {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-        }
-
-        /* Style for the text-based infinity icon in the legend */
-        .legend .icon-text {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 500;
-            line-height: 20px; /* Aligns infinity symbol vertically */
+        .connection-status::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 10px;
+            height: 10px;
+            border-top: 1px solid rgba(209, 212, 211, 0.1);
+            border-left: 1px solid rgba(209, 212, 211, 0.1);
         }
 
-        .legend .label {
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: rgba(209, 212, 211, 0.3);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
         }
 
-        /*
-         * **** MODIFIED: Theme Toggle Button ****
-         * This styles the new Day/Night toggle button
-        */
-        .theme-toggle {
-            position: fixed;
-            bottom: 160px; /* Positioned above the recenter button */
-            left: 32px;
-            background: #111;
-            border: 0.5px solid #333;
-            border-radius: 12px;
-            padding: 10px 16px; /* Adjusted padding for text */
-            cursor: pointer;
-            transition: all 0.2s ease;
-            z-index: 900;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 13px; /* Matched recenter button */
-            font-weight: 500; /* Matched recenter button */
+        .status-indicator.connected {
+            background: #00a36e;
+            animation: pulse-status 2s ease-in-out infinite;
         }
 
-        .theme-toggle:hover {
-            background: #222;
-            transform: translateY(-2px);
-        }
-        /* **** END MODIFIED **** */
-
-
-        /* This styles the "Recenter" button */
-        .recenter-button {
-            position: fixed;
-            bottom: 100px;
-            left: 32px;
-            background: #111;
-            border: 0.5px solid #333;
-            border-radius: 12px;
-            padding: 10px 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            z-index: 900;
-            font-size: 13px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .status-indicator.connecting {
+            background: #ffa500;
         }
 
-        .recenter-button:hover {
-            background: #222;
-            transform: translateY(-2px);
+        .status-indicator.disconnected {
+            background: #ff0064;
         }
 
-        /* This is the base style for all aircraft icons */
-        .plane-marker {
+        @keyframes pulse-status {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .status-text {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: rgba(209, 212, 211, 0.6);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* --- MARKER STYLING --- */
+        .plane-marker, .vessel-marker {
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .plane-marker svg {
-            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+        .plane-marker svg, .vessel-marker svg {
+            filter: drop-shadow(0 0 1px currentColor);
         }
 
-        /* Style for the text-based helicopter icon on the map */
-        .plane-marker .icon-heli {
-            font-size: 28px;
-            font-weight: 500;
-            line-height: 1;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        .incident-marker {
+            font-size: 12px;
+            filter: drop-shadow(0 0 1px rgba(255, 0, 100, 0.8));
         }
 
-        /* This makes the aircraft trails fade in/out smoothly */
-        .leaflet-overlay-pane svg path {
-            transition: stroke 0.5s ease;
+        .location-marker-wrapper {
+            text-align: center;
         }
 
-        /*
-         * **** MODIFIED: Map Attribution ****
-         * This styles the map attribution (e.g., "© OpenStreetMap")
-         * It now supports both light and dark modes.
-        */
+        .location-marker-svg .marker-outer-ring {
+            fill: rgba(0, 163, 110, 0.1);
+            stroke: rgba(0, 163, 110, 0.8);
+            stroke-width: 2px;
+        }
+
+        .location-marker-svg .marker-inner-dot {
+            fill: rgba(0, 163, 110, 0.9);
+        }
+
+        .location-marker-label {
+            background: rgba(23, 28, 27, 0.95);
+            border: 1px solid rgba(0, 163, 110, 0.5);
+            color: #00a36e;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 12px;
+            margin-top: 4px;
+            white-space: nowrap;
+            letter-spacing: 2px;
+            clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
+        }
+
+        /* --- LEAFLET OVERRIDES --- */
         .leaflet-control-attribution {
-            background: rgba(0, 0, 0, 0.5) !important;
-            color: rgba(255, 255, 255, 0.5) !important;
-            font-size: 10px !important;
+            background: rgba(23, 28, 27, 0.9) !important;
+            color: rgba(209, 212, 211, 0.3) !important;
+            font-size: 9px !important;
             padding: 4px 8px !important;
-            border-radius: 4px !important;
+            border: 1px solid rgba(209, 212, 211, 0.1) !important;
         }
-
         .leaflet-control-attribution a {
-            color: rgba(255, 255, 255, 0.7) !important;
+            color: rgba(0, 163, 110, 0.6) !important;
         }
-
-        /* This rule overrides the attribution for the light theme */
-        body.theme-light .leaflet-control-attribution {
-            background: rgba(255, 255, 255, 0.7) !important;
-            color: rgba(0, 0, 0, 0.7) !important;
-        }
-        body.theme-light .leaflet-control-attribution a {
-            color: #000 !important;
-        }
-
-
-        /*
-         * **** MODIFICATION: AIRCRAFT TYPE COLORS & STYLES ****
-         * These classes control the icon style (fill/stroke) and the trail color.
-        */
         
-        /* -- Trail Colors -- */
-        .trail-comm  { stroke: #0a84ff; }
-        .trail-ga    { stroke: #30d158; }
-        .trail-mil   { stroke: #ff375f; }
-        .trail-heli  { stroke: #ff9f0a; }
-        .trail-other { stroke: #a2a2d2; }
-
-        /* -- Icon Styles -- */
-        /* **** MODIFIED: Added a stroke to .icon-comm to match the visual weight **** */
-        .icon-comm  { fill: #0a84ff; stroke: #0a84ff; stroke-width: 1px; } /* Commercial: FILLED + OUTLINE */
-        .icon-ga    { fill: none; stroke: #30d158; stroke-width: 1px; } /* GA: OUTLINE */
-        .icon-mil   { fill: none; stroke: #ff375f; stroke-width: 1px; } /* Military: OUTLINE */
-        .icon-other { fill: none; stroke: #a2a2d2; stroke-width: 1px; } /* Other: OUTLINE */
-        .icon-heli  { color: #ff9f0a; } /* Helicopter: TEXT COLOR */
-
-
-        /* These styles make the UI responsive on smaller (mobile) screens */
-        @media (max-width: 768px) {
-            #header {
-                padding: 20px 20px;
-            }
-
-            .aircraft-info {
-                bottom: 20px;
-                left: 20px;
-                right: 20px;
-                transform: none;
-                min-width: auto;
-            }
-
-            .audio-control {
-                bottom: 20px;
-                left: 20px;
-                padding: 10px 16px;
-                font-size: 13px;
-            }
-            
-            /* **** MODIFIED: Position theme toggle on mobile **** */
-            .theme-toggle {
-                bottom: 140px; /* Stacked above recenter */
-                left: 20px;
-                padding: 8px 14px; /* Matched recenter button */
-                font-size: 12px;
-            }
-
-            .recenter-button {
-                bottom: 80px;
-                left: 20px;
-                padding: 8px 14px;
-                font-size: 12px;
-            }
-
-            /* Move legend to the bottom on mobile to avoid zoom controls */
-            .legend {
-                top: auto;
-                bottom: 20px;
-                right: 20px;
-                padding: 12px;
-                min-width: 140px;
-            }
-
-            .legend .title {
-                font-size: 10px;
-                margin-bottom: 10px;
-            }
-            
-            .legend .item {
-                font-size: 12px;
-                margin-bottom: 6px;
-            }
+        /* Radar Smoothness */
+        .radar-tiles {
+            filter: blur(0.5px) contrast(1.2) saturate(1.2);
+            image-rendering: optimizeQuality;
         }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .header-info { top: 12px; left: 12px; }
+            .mission-id { font-size: 8px; }
+            .location-title { font-size: 18px; }
+            .header-controls { top: 12px; right: 12px; gap: 8px; }
+            .time-display, .radar-control { padding: 5px 8px; font-size: 10px; }
+            .metrics-panel { left: 12px; top: 65px; width: 140px; }
+            .metric-block { padding: 10px; }
+            .metric-value { font-size: 28px; }
+            
+            /* Hide legend on mobile */
+            .legend-panel { display: none; }
+            
+            .legend-header { padding: 10px; font-size: 8px; }
+            .info-panel { bottom: 12px; left: 12px; right: 12px; width: auto; transform: none; }
+            .audio-control, .connection-status { bottom: 12px; padding: 10px 14px; }
+            .audio-control { left: 12px; }
+            .connection-status { right: 12px; }
+        }
+.map-tiles {
+    /* Invert, mostly grayscale, high contrast for street visibility */
+    filter: invert(100%) grayscale(90%) hue-rotate(130deg) brightness(90%) contrast(130%);
+}
     </style>
 </head>
 <body>
-    <div id="header">
-        <div class="logo">
-            <span>Busy Towers</span>
-            <span class="count" id="aircraft-count">• 0 aircraft</span>
-        </div>
-        
-        <select id="airport-selector" class="airport-selector">
-            <option value="JFK" selected>JFK</option>
-			<option value="ATL">ATL</option>
-            <option value="DEN">DEN</option>
-            <option value="LAX">LAX</option>
-            <option value="SEA">SEA</option>
-            <option value="IAD">IAD</option>
-            </select>
-    </div>
-
     <div id="map"></div>
 
-    <div class="legend">
-        <div class="title">Aircraft Type</div>
-        <div class="item">
-            <svg class="icon icon-comm" viewBox="0 0 24 24">
-                <path d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/>
-            </svg>
-            <div class="label">Commercial</div>
+    <div class="header-info">
+        <div class="mission-id">OPS-LIVE-MONITOR</div>
+        <div class="location-title" id="location-title">SEATTLE</div>
+    </div>
+
+    <div class="header-controls">
+        <div class="location-badge">
+            <div class="location-icon"></div>
+            <select id="location-selector" class="location-selector">
+    <option value="JFK">JFK</option>
+    <option value="SEA" selected>SEA</option>
+    <option value="DC">DC</option>
+    <option value="MIA">MIA</option>
+    <option value="DEN">DEN</option>
+    <option value="ORD">ORD</option>
+    <option value="LAX">LAX</option>
+</select>
         </div>
-        <div class="item">
-            <svg class="icon icon-ga" viewBox="0 0 24 24">
-                <path d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/>
-            </svg>
-            <div class="label">Gen. Aviation</div>
+        
+        <div id="radar-control" class="radar-control">RADAR: OFF</div>
+        
+        <div class="time-display" id="current-time">00:00:00</div>
+    </div>
+
+    <div class="metrics-panel">
+        <div class="metric-block aircraft">
+            <div class="metric-label">AIRCRAFT</div>
+            <div class="metric-value" id="aircraft-count">0</div>
+            <div class="metric-subtext">ACTIVE TRACKING</div>
         </div>
-        <div class="item">
-            <svg class="icon icon-mil" viewBox="0 0 24 24">
-                <path d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/>
-            </svg>
-            <div class="label">Military</div>
+        <div class="metric-block vessels">
+            <div class="metric-label">VESSELS</div>
+            <div class="metric-value" id="vessel-count">0</div>
+            <div class="metric-subtext">MONITORED</div>
         </div>
-        <div class="item">
-            <span class="icon-text icon-heli">&infin;</span>
-            <div class="label">Helicopter</div>
+        <div class="metric-block incidents">
+            <div class="metric-label">INCIDENTS</div>
+            <div class="metric-value" id="incident-count">0</div>
+            <div class="metric-subtext">LAST 3 HOURS</div>
         </div>
     </div>
 
-
-    <div id="theme-toggle" class="theme-toggle" title="Toggle Map Theme">
-        <span id="theme-toggle-text">DAY</span>
-    </div>
-
-    <div id="recenter-button" class="recenter-button">
-        <span>RECENTER</span>
-    </div>
-
-    <div id="aircraft-info" class="aircraft-info">
-        <div class="callsign" id="info-callsign">—</div>
-        <div class="type" id="info-type">—</div>
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value" id="info-altitude">—</div>
-                <div class="stat-label">Altitude</div>
+    <div class="legend-panel">
+        <div class="legend-header">LEGEND / CLASSIFICATIONS</div>
+        <div class="legend-content">
+            <div class="legend-section">
+                <div class="legend-section-title">AIRCRAFT</div>
+                <div class="legend-item">
+                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00d9ff" d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/></svg></div>
+                    <span>COMMERCIAL</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00ff88" d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/></svg></div>
+                    <span>GENERAL AVN</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#ff0064" d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/></svg></div>
+                    <span>MILITARY</span>
+                </div>
             </div>
-            <div class="stat">
-                <div class="stat-value" id="info-speed">—</div>
-                <div class="stat-label">Speed</div>
+
+            <div class="legend-section">
+                <div class="legend-section-title">VESSELS</div>
+                <div class="legend-item">
+                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00d9ff" d="M12 4 L8 8 L8 19 L16 19 L16 8 Z"/></svg></div>
+                    <span>CARGO</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00ff88" d="M12 4 L8 8 L8 19 L16 19 L16 8 Z"/></svg></div>
+                    <span>PASSENGER</span>
+                </div>
             </div>
-            <div class="stat">
-                <div class="stat-value" id="info-status">—</div>
-                <div class="stat-label">Status</div>
+
+            <div class="legend-section">
+                <div class="legend-section-title">EMERGENCY</div>
+                <div class="legend-item">
+                    <div class="legend-icon">🔥</div>
+                    <span>FIRE / EMS</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-panel" class="info-panel">
+        <div id="aircraft-info" style="display: none;">
+            <div class="info-header">
+                <div class="info-title" id="ac-callsign"></div>
+                <div class="info-subtitle" id="ac-type"></div>
+            </div>
+            <div class="info-stats">
+                <div class="info-stat">
+                    <div class="info-stat-value" id="ac-alt"></div>
+                    <div class="info-stat-label">ALTITUDE</div>
+                </div>
+                <div class="info-stat">
+                    <div class="info-stat-value" id="ac-spd"></div>
+                    <div class="info-stat-label">SPEED</div>
+                </div>
+                <div class="info-stat">
+                    <div class="info-stat-value" id="ac-stat"></div>
+                    <div class="info-stat-label">STATUS</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="vessel-info" style="display: none;">
+            <div class="info-header">
+                <div class="info-title" id="vs-name"></div>
+                <div class="info-subtitle" id="vs-type"></div>
+            </div>
+            <div class="info-stats">
+                <div class="info-stat">
+                    <div class="info-stat-value" id="vs-spd"></div>
+                    <div class="info-stat-label">SPEED</div>
+                </div>
+                <div class="info-stat">
+                    <div class="info-stat-value" id="vs-hdg"></div>
+                    <div class="info-stat-label">HEADING</div>
+                </div>
+                <div class="info-stat">
+                    <div class="info-stat-value" id="vs-dest"></div>
+                    <div class="info-stat-label">DESTINATION</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="incident-info" style="display: none;">
+            <div class="info-header">
+                <div class="info-title" id="inc-type"></div>
+                <div class="info-subtitle" id="inc-addr"></div>
+            </div>
+            <div class="info-stats-2col">
+                <div class="info-stat">
+                    <div class="info-stat-value" id="inc-id"></div>
+                    <div class="info-stat-label">ID</div>
+                </div>
+                <div class="info-stat">
+                    <div class="info-stat-value" id="inc-time"></div>
+                    <div class="info-stat-label">TIME</div>
+                </div>
             </div>
         </div>
     </div>
 
     <div id="audio-control" class="audio-control">
-        <svg id="audio-icon" viewBox="0 0 24 24">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
-        </svg>
-        <span id="audio-text">Listen to ATC</span>
+        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        <span class="audio-text" id="audio-text">ATC OFFLINE</span>
+    </div>
+
+    <div class="connection-status">
+        <div class="status-indicator connecting" id="status-indicator"></div>
+        <span class="status-text" id="status-text">CONNECTING</span>
     </div>
 
     <audio id="audio" preload="none"></audio>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // --- SECTION 1: GLOBAL SETTINGS & VARIABLES ---
+        const CONFIG = {
+    URLS: {
+        MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        RADAR: 'https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
+        SHIPS: 'wss://ports-production-8906.up.railway.app',
+        SEATTLE_911: 'https://data.seattle.gov/resource/grwu-wqtk.json',
+        ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`
+    },
+    PATHS: {
+        PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z",
+        SHIP: "M12 4 L8 8 L8 19 L16 19 L16 8 Z"
+    },
+    LOCATIONS: {
+        JFK: { 
+            name: 'JFK', 
+            lat: 40.6413, lon: -73.7781, 
+            zoom: 11, 
+            audio: 'https://d.liveatc.net/kjfk9_s', 
+            bbox: [[40.4, -74.3], [40.9, -73.7]] 
+        },
+        SEA: { 
+            name: 'SEA', 
+            lat: 47.4502, lon: -122.3088, 
+            viewLat: 47.6062, viewLon: -122.3321,
+            zoom: 11, 
+            audio: 'https://d.liveatc.net/ksea3_gnd', 
+            bbox: [[47.4, -122.5], [47.8, -122.2]] 
+        },
+        DC: { 
+            name: 'IAD/DCA', 
+            lat: 38.8977, lon: -77.0365, 
+            zoom: 11, 
+            audio: 'https://d.liveatc.net/kiad1_1', 
+            bbox: [[38.5, -77.5], [39.2, -76.3]] 
+        },
+        MIA: { 
+            name: 'MIA', 
+            lat: 25.7959, lon: -80.2870, 
+            zoom: 11, 
+            // Miami Tower
+            audio: 'https://d.liveatc.net/kmia3_gnd', 
+            // Captures PortMiami and coast
+            bbox: [[25.7, -80.3], [25.9, -80.1]] 
+        },
+        DEN: { 
+            name: 'DEN', 
+            lat: 39.8561, lon: -104.6737, 
+            zoom: 11, 
+            // Denver Tower
+            audio: 'https://d.liveatc.net/kden1_6', 
+            // Landlocked - bbox for general area
+            bbox: [[39.8, -104.8], [40.0, -104.5]] 
+        },
+        ORD: { 
+            name: 'ORD', 
+            lat: 41.9742, lon: -87.9073, 
+            zoom: 11, 
+            // Chicago O'Hare Tower
+            audio: 'https://d.liveatc.net/kord1n2_app_133625', 
+            // Captures Lake Michigan waterfront
+            bbox: [[41.8, -87.6], [42.0, -87.5]] 
+        },
+        LAX: { 
+            name: 'LAX', 
+            lat: 33.9416, lon: -118.4085, 
+            zoom: 11, 
+            // LAX Tower
+            audio: 'https://d.liveatc.net/klax4', 
+            // Captures Pacific Ocean / Port of LA
+            bbox: [[33.7, -118.5], [34.0, -118.3]] 
+        }
+    },
+    COLORS: {
+        COMM: '#00d9ff', 
+        GA: '#00ff88', 
+        MIL: '#ff0064', 
+        HELI: '#ffa500', 
+        OTHER: 'rgba(255, 255, 255, 0.3)',
+        TUG: '#a855f7', 
+        PILOT: '#ec4899'
+    }
+};
 
-        /*
-         * MODIFICATION: AIRPORT LIST
-         * This is the main list of airports. To add one:
-         * 1. Add a new line here (e.g., "YOUR_CODE": { ... }).
-         * 2. Find coordinates (e.g., Google "LAX coordinates").
-         * 3. Find an ATC audio stream (e.g., from LiveATC.net).
-         * 4. Add the matching "<option>" tag in the HTML dropdown above.
-        */
-        const AIRPORTS = {
-            IAD: { name: 'IAD', lat: 38.9531, lon: -77.4565, zoom: 10, audio: 'https://d.liveatc.net/kiad1_7' },
-            JFK: { name: 'JFK', lat: 40.6413, lon: -73.7781, zoom: 10, audio: 'https://d.liveatc.net/kjfk9_s' },
-            ATL: { name: 'ATL', lat: 33.6407, lon: -84.4277, zoom: 10, audio: 'https://d.liveatc.net/katl_twr' },
-            DEN: { name: 'DEN', lat: 39.8561, lon: -104.6737, zoom: 10, audio: 'https://d.liveatc.net/kden1_6' },
-            LAX: { name: 'LAX', lat: 33.9416, lon: -118.4085, zoom: 10, audio: 'https://d.liveatc.net/klax6' },
-			SEA: { name: 'SEA', lat: 47.4502, lon: -122.3088, zoom: 10, audio: 'https://d.liveatc.net/ksea3_gnd' }
+        // --- STATE MANAGEMENT ---
+        const state = {
+            location: 'SEA',
+            map: null,
+            isRadarOn: false,
+            selectedItem: null,
+            isFollowing: false,
+            socket: null,
+            reconnectTimer: null,
+            audioElement: document.getElementById('audio')
         };
-        
-        /*
-         * **** UPDATED: Map Tile URLs ****
-         * Changed the LIGHT_MAP_URL to the standard OpenStreetMap.
-        */
-        const LIGHT_MAP_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-        const DARK_MAP_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
+        // --- LAYERS & DATA STORAGE ---
+        const layers = {
+            base: null,
+            radar: null,
+            planes: { 
+                markers: new Map(), 
+                trails: new Map(), 
+                lines: new Map(), 
+                data: new Map() 
+            },
+            vessels: { 
+                markers: new Map(), 
+                trails: new Map(), 
+                lines: new Map(), 
+                data: new Map() 
+            },
+            incidents: { 
+                markers: new Map(), 
+                data: new Map() 
+            },
+            overlays: [] // Stores special overlays like the DC airport markers
+        };
 
-        // **** UPDATED: We only need one plane icon path now ****
-        // This is the standard commercial airliner icon
-        const PATH_COMMERCIAL = "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z";
-
-        // This variable keeps track of which airport is currently selected
-        let currentAirport = 'JFK'; // Default airport on load
-        let currentTheme = 'dark';  // Default theme on load
-
-        // These variables are placeholders to store our map and aircraft data
-        let map; // The Leaflet map object
-        let tileLayer; // The Leaflet tile layer object
-        let aircraftData = new Map(); // Stores the raw data for all aircraft
-        let markers = new Map();      // Stores the clickable icon (marker) for each aircraft
-        let trails = new Map();       // Stores the path (trail) for each aircraft
-        let trailLines = new Map();   // Stores the visual line object for each trail
-
-        let selectedAircraft = null; // Stores the ID of the aircraft you clicked on
-        let airportMarker = null;    // Stores the clickable icon for the airport
-        let isFollowing = false;     // True if the map is currently panning to follow a plane
-
-        // --- SECTION 2: CORE FUNCTIONS ---
-
-        /**
-         * This is the main function that runs when the page first loads.
-         * It sets everything up.
-         */
+        // --- INITIALIZATION ---
         function init() {
-            // Makes the dropdown menu match the default airport ('JFK')
-            document.getElementById('airport-selector').value = currentAirport;
-            // Sets the browser tab title
-            document.title = "Busy Towers";
-            
-            // Mobile fullscreen: Hide address bar on load
-            setTimeout(() => {
-                window.scrollTo(0, 1);
-            }, 100);
-            
-            // Re-hide address bar on orientation change
-            window.addEventListener('orientationchange', () => {
-                setTimeout(() => {
-                    window.scrollTo(0, 1);
-                }, 100);
-            });
-            
-            // Calls all the other setup functions
+            // Set initial UI state
+            document.getElementById('location-selector').value = state.location;
+            updateLocationTitle();
+
+            // Boot up map and services
             initMap();
             startTracking();
-            autoHideHeader();
+            setupEventListeners();
+            
+            // Start the clock
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // Attempt to start audio (browser may block)
             autoStartAudio();
-            
-            // Connects the "Listen to ATC" button to its function
-            document.getElementById('audio-control').addEventListener('click', toggleAudio);
-            
-            // Connects the "Recenter" button to its function
-            document.getElementById('recenter-button').addEventListener('click', recenterView);
-
-            // **** NEW: Connect the Theme Toggle button ****
-            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
         }
 
-        /**
-         * Creates the map, adds the map tiles, and places the first
-         * airport marker.
-         */
         function initMap() {
-            const airport = AIRPORTS[currentAirport];
+            const loc = CONFIG.LOCATIONS[state.location];
             
-            // Create the map object, centered on the current airport
-            map = L.map('map', {
-                center: [airport.lat, airport.lon],
-                zoom: airport.zoom,
+            // Use viewLat/Lon if available, otherwise lat/lon
+            const centerLat = loc.viewLat || loc.lat;
+            const centerLon = loc.viewLon || loc.lon;
+
+            state.map = L.map('map', {
+                center: [centerLat, centerLon],
+                zoom: loc.zoom,
                 zoomControl: false,
                 attributionControl: true
             });
-
-            /*
-             * MODIFICATION: MAP TILES
-             * This now uses the global `tileLayer` variable so we
-             * can change the URL later.
-            */
-            tileLayer = L.tileLayer(DARK_MAP_URL, {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
+            
+            layers.base = L.tileLayer(CONFIG.URLS.MAP, {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19,
+    className: 'map-tiles' // Adds a hook for our CSS
+}).addTo(state.map);
+            
+            layers.radar = L.tileLayer(CONFIG.URLS.RADAR, { 
+                opacity: 0.6,
+                attribution: 'Weather © IEM',
+                zIndex: 500,
+                className: 'radar-tiles' // Custom CSS class for blur effect
             });
-            tileLayer.addTo(map);
 
-            // Create the white circle icon for the airport
-            const airportIcon = L.divIcon({
-                html: `
-                    <div style="text-align: center;">
-                        <svg width="32" height="32" viewBox="0 0 32 32">
-                            <circle cx="16" cy="16" r="12" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
-                            <circle cx="16" cy="16" r="4" fill="rgba(255,255,255,0.9)"/>
-                        </svg>
-                        <div style="background: #111; border: 0.5px solid #333; color: white; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; margin-top: 2px; white-space: nowrap;">${airport.name}</div>
-                    </div>
-                `,
-                className: '',
-                iconSize: [80, 60],
-                iconAnchor: [40, 30]
-            });
-            airportMarker = L.marker([airport.lat, airport.lon], { icon: airportIcon }).addTo(map);
+            updateLocationMarker();
+            L.control.zoom({ position: 'bottomright' }).addTo(state.map);
+        }
 
-            // Adds the +/- zoom buttons to the bottom-right
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-            // Listens for a change on the dropdown menu
-            document.getElementById('airport-selector').addEventListener('change', (e) => {
-                changeAirport(e.target.value);
+        function setupEventListeners() {
+            document.getElementById('audio-control').addEventListener('click', toggleAudio);
+            document.getElementById('radar-control').addEventListener('click', toggleRadar);
+            document.getElementById('location-selector').addEventListener('change', (e) => changeLocation(e.target.value));
+            
+            // Handle map clicks
+            state.map.on('click', (e) => {
+                // Don't react if clicking on a marker
+                if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
+                
+                hideInfoBox();
+                
+                // Recenter if user clicks empty space while following an object
+                if (state.isFollowing || state.selectedItem) {
+                    recenterView();
+                }
             });
         }
-        
-        /**
-         * **** MODIFIED: Theme Toggle Function ****
-         * Toggles the map theme and updates the button text.
-         */
-        function toggleTheme() {
-            const themeText = document.getElementById('theme-toggle-text');
-            if (currentTheme === 'dark') {
-                currentTheme = 'light';
-                tileLayer.setUrl(LIGHT_MAP_URL); // Set to light map URL
-                document.body.classList.add('theme-light'); // Add class for CSS
-                themeText.textContent = 'DARK'; // Update button text
+
+        // --- CORE LOGIC ---
+        function changeLocation(code) {
+            state.isFollowing = false;
+            state.location = code;
+            const loc = CONFIG.LOCATIONS[code];
+            
+            updateLocationTitle();
+            
+            // Use viewLat/Lon if available
+            const centerLat = loc.viewLat || loc.lat;
+            const centerLon = loc.viewLon || loc.lon;
+            
+            state.map.setView([centerLat, centerLon], loc.zoom);
+            updateLocationMarker();
+            
+            // Clear old data before loading new data
+            clearMapData();
+            hideInfoBox();
+            handleAudioChange(loc.audio);
+
+            // Reconnect ship stream for new location
+            if (state.socket && state.socket.readyState === WebSocket.OPEN) {
+                subscribeToShips();
+            }
+            
+            // Update 911 calls (Seattle only)
+            fetchFireIncidents();
+        }
+
+        function updateLocationMarker() {
+            // Remove existing overlays
+            layers.overlays.forEach(l => state.map.removeLayer(l));
+            layers.overlays = [];
+
+            if (state.location !== 'DC') {
+                // Standard single marker
+                const loc = CONFIG.LOCATIONS[state.location];
+                const icon = createLocationIcon(loc.name);
+                layers.overlays.push(L.marker([loc.lat, loc.lon], { icon }).addTo(state.map));
             } else {
-                currentTheme = 'dark';
-                tileLayer.setUrl(DARK_MAP_URL); // Set to dark map URL
-                document.body.classList.remove('theme-light'); // Remove class
-                themeText.textContent = 'LIGHT'; // Update button text
+                // DC Special Logic: Show two separate airports
+                addDCOverlays();
             }
         }
 
-        /**
-         * Called when you select a new airport from the dropdown.
-         * It moves the map, clears old data, and changes the audio.
-         */
-        function changeAirport(code) {
-            isFollowing = false; // Stop following any plane
-            currentAirport = code;
-            const airport = AIRPORTS[code];
-            
-            // Move the map to the new airport's coordinates
-            map.setView([airport.lat, airport.lon], airport.zoom);
-            
-            // Remove the old airport's marker
-            if (airportMarker) {
-                map.removeLayer(airportMarker);
-            }
-            
-            // Create a new marker for the new airport
-            const airportIcon = L.divIcon({
-                html: `
-                    <div style="text-align: center;">
-                        <svg width="32" height="32" viewBox="0 0 32 32">
-                            <circle cx="16" cy="16" r="12" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
-                            <circle cx="16" cy="16" r="4" fill="rgba(255,255,255,0.9)"/>
-                        </svg>
-                        <div style="background: #111; border: 0.5px solid #333; color: white; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; margin-top: 2px; white-space: nowrap;">${airport.name}</div>
-                    </div>
-                `,
+        function addDCOverlays() {
+            layers.overlays.push(L.marker([38.9531, -77.4565], { icon: createLocationIcon('IAD') }).addTo(state.map));
+            layers.overlays.push(L.marker([38.8521, -77.0377], { icon: createLocationIcon('DCA') }).addTo(state.map));
+        }
+
+        function createLocationIcon(label) {
+            return L.divIcon({
+                // **** IMPORTANT: className must be empty string to remove default white box ****
                 className: '',
-                iconSize: [80, 60],
-                iconAnchor: [40, 30]
+                html: `<div class="location-marker-wrapper">
+                        <svg class="location-marker-svg" width="36" height="36" viewBox="0 0 36 36">
+                            <circle class="marker-outer-ring" cx="18" cy="18" r="14"/>
+                            <circle class="marker-inner-dot" cx="18" cy="18" r="5"/>
+                        </svg>
+                        <div class="location-marker-label">${label}</div>
+                       </div>`,
+                iconSize: [90, 70],
+                iconAnchor: [45, 35]
             });
-            airportMarker = L.marker([airport.lat, airport.lon], { icon: airportIcon }).addTo(map);
-            
-            // Clear all old aircraft data from the maps
-            markers.forEach(m => map.removeLayer(m));
-            trailLines.forEach(t => map.removeLayer(t));
-            markers.clear();
-            trails.clear();
-            trailLines.clear();
-            aircraftData.clear();
-            
-            // Hide the aircraft info box
-            hideAircraftInfo();
-            
-            // Switch the ATC audio stream
-            const audio = document.getElementById('audio');
-            const control = document.getElementById('audio-control');
-            const text = document.getElementById('audio-text');
-            const wasPlaying = !audio.paused;
-            audio.pause();
-            audio.src = airport.audio; // Set the new audio source
-            if (wasPlaying) {
-                // If audio was on, play the new stream automatically
-                audio.muted = true;
-                audio.play().then(() => {
-                    audio.muted = false;
-                    text.textContent = 'ATC Live';
-                }).catch(() => {});
-            } else {
-                text.textContent = 'Listen to ATC';
-            }
         }
 
-        /**
-         * This is the core data function. It fetches new aircraft data
-         * from the API every 2 seconds.
-         */
-        async function fetchAircraft() {
+        function clearMapData() {
+            // Helper to clear a specific layer set
+            const clearSet = (set) => {
+                set.markers.forEach(m => state.map.removeLayer(m));
+                set.markers.clear();
+                
+                if (set.lines) {
+                    set.lines.forEach(l => state.map.removeLayer(l));
+                    set.lines.clear();
+                }
+                
+                if (set.trails) {
+                    set.trails.clear();
+                }
+                
+                set.data.clear();
+            };
+
+            clearSet(layers.planes);
+            clearSet(layers.vessels);
+            clearSet(layers.incidents);
+            
+            updateStats();
+        }
+
+        // --- DATA FETCHING: AIRCRAFT (ADSB) ---
+        async function fetchPlanes() {
             try {
-                const airport = AIRPORTS[currentAirport];
-                // Fetch data from the API based on the current airport's location
-                const response = await fetch(`https://api.airplanes.live/v2/point/${airport.lat}/${airport.lon}/50`);
-                const data = await response.json();
+                const loc = CONFIG.LOCATIONS[state.location];
+                const res = await fetch(CONFIG.URLS.ADSB(loc.lat, loc.lon));
+                const data = await res.json();
                 
-                if (!data.ac) return; // Exit if there's no aircraft data
+                if (!data.ac) return;
                 
-                const currentHexes = new Set(); // Keeps track of planes in this update
+                const activeHexes = new Set();
                 
                 data.ac.forEach(ac => {
-                    // --- Filter out aircraft we don't want to see ---
-                    const altitude = ac.alt_baro || ac.alt_geom || 0;
-                    const isFlying = altitude > 100; // Filter out planes on the ground
+                    // Filter invalid data or ground aircraft
+                    if (!ac.lat || !ac.lon || ac.alt_baro < 100) return;
                     
-                    // Now we only filter out planes with bad data or on the ground.
-                    if (!ac.lat || !ac.lon || ac.seen > 60 || !isFlying) return;
+                    activeHexes.add(ac.hex);
+                    layers.planes.data.set(ac.hex, ac);
                     
-                    currentHexes.add(ac.hex); // Add this plane to our "seen" list
-                    aircraftData.set(ac.hex, ac); // Store its data
-                    
-                    
-                    // --- Store the trail (path) data ---
-                    // This creates a "fake" trail based on heading for new aircraft
-                    // to make them appear with a trail instantly.
-                    if (!trails.has(ac.hex)) {
-                        trails.set(ac.hex, []); // Create a new trail if it's a new plane
-                        const trail = trails.get(ac.hex);
-                        const heading = (ac.track || 0) * Math.PI / 180;
-                        const speed = (ac.gs || 400) * 0.000514444; // Rough speed conversion
-                        for (let i = 1; i >= 0; i--) {
-                            const timeBack = i * .5; 
-                            const distBack = speed * timeBack;
-                            const lat = ac.lat - (Math.cos(heading) * distBack);
-                            const lon = ac.lon - (Math.sin(heading) * distBack);
-                            trail.push([lat, lon]);
-                        }
+                    // Update Trails
+                    if (!layers.planes.trails.has(ac.hex)) {
+                        layers.planes.trails.set(ac.hex, []);
                     }
-                    const trail = trails.get(ac.hex);
-                    trail.push([ac.lat, ac.lon]); // Add the new position to the trail
-                    if (trail.length > 200) trail.shift(); // Keep the trail from getting too long
-                    
-                    // Finally, call updateAircraft to draw/move the plane
-                    updateAircraft(ac);
+                    const trail = layers.planes.trails.get(ac.hex);
+                    trail.push([ac.lat, ac.lon]);
+                    if (trail.length > 200) trail.shift();
+
+                    updatePlaneMarker(ac, trail);
                 });
-                
-                // Update the stats in the legend
-                updateStats(currentHexes.size);
-                
-                // --- Clean up old aircraft ---
-                // If a plane was in our `markers` list but not in `currentHexes`,
-                // it means it has flown out of range and should be removed.
-                markers.forEach((marker, hex) => {
-                    if (!currentHexes.has(hex)) {
-                        map.removeLayer(marker); // Remove icon
-                        markers.delete(hex);
-                        if (trailLines.has(hex)) {
-                            map.removeLayer(trailLines.get(hex)); // Remove trail
-                            trailLines.delete(hex);
+
+                // Cleanup planes that flew out of range
+                layers.planes.markers.forEach((_, hex) => {
+                    if (!activeHexes.has(hex)) {
+                        state.map.removeLayer(layers.planes.markers.get(hex));
+                        layers.planes.markers.delete(hex);
+                        
+                        if (layers.planes.lines.has(hex)) {
+                            state.map.removeLayer(layers.planes.lines.get(hex));
+                            layers.planes.lines.delete(hex);
                         }
-                        trails.delete(hex);
+                        layers.planes.trails.delete(hex);
                     }
                 });
                 
-            } catch (error) {
-                console.error('Error fetching aircraft data:', error);
+                updateStats();
+            } catch (e) {
+                console.error("ADSB Error", e);
             }
         }
 
-        /**
-         * Updates the text in the header ("X aircraft").
-         */
-        function updateStats(total) {
-            // Update header count
-            let countText;
-            if (total === 0) {
-                countText = '• Clear skies ✨';
-            } else if (total === 1) {
-                countText = '• 1 aircraft';
-            } else {
-                countText = `• ${total} aircraft`;
+        function updatePlaneMarker(ac, trail) {
+            // If user is following this specific plane, pan the map
+            if (ac.hex === state.selectedItem && state.isFollowing) {
+                state.map.panTo([ac.lat, ac.lon]);
             }
-            document.getElementById('aircraft-count').textContent = countText;
+
+            // Determine Type & Color
+            let color = CONFIG.COLORS.OTHER;
+            let type = 'other';
+            
+            if (ac.category === 'A7') {
+                type = 'heli';
+                color = CONFIG.COLORS.HELI;
+            } else if (['A3','A4','A5'].includes(ac.category)) {
+                type = 'comm';
+                color = CONFIG.COLORS.COMM;
+            } else if (['A1','A2'].includes(ac.category)) {
+                type = 'ga';
+                color = CONFIG.COLORS.GA;
+            } else if (ac.category === 'A6') {
+                type = 'mil';
+                color = CONFIG.COLORS.MIL;
+            }
+
+            const icon = createHudIcon(type, ac.track || 0, color, ac.category === 'A7');
+            
+            if (layers.planes.markers.has(ac.hex)) {
+                layers.planes.markers.get(ac.hex).setLatLng([ac.lat, ac.lon]).setIcon(icon);
+            } else {
+                const m = L.marker([ac.lat, ac.lon], { icon }).addTo(state.map);
+                m.on('click', () => showInfo('plane', layers.planes.data.get(ac.hex)));
+                layers.planes.markers.set(ac.hex, m);
+            }
+
+            updateTrailLine(layers.planes.lines, ac.hex, trail, color);
         }
 
-        /**
-         * This function is called for every single aircraft in every update.
-         * It's responsible for drawing the icon, moving it, and updating its trail.
-         */
-        function updateAircraft(ac) {
-            // If this plane is selected and 'Follow Mode' is on, move the map
-            if (ac.hex === selectedAircraft && isFollowing) {
-                map.panTo([ac.lat, ac.lon]);
-            }
-
-            const heading = ac.track || 0;
+        // --- DATA FETCHING: SHIPS (WEBSOCKET) ---
+        function connectWebSocket() {
+            updateConnection('connecting');
+            state.socket = new WebSocket(CONFIG.URLS.SHIPS);
             
-            // **** MODIFIED: Icon and Color Selection Logic ****
-            const category = (ac.category || '').toUpperCase();
-            let iconClass; // CSS class for the icon style (fill vs stroke)
-            let trailClass; // CSS class for the trail color
-            let iconHTML; // The actual HTML for the icon
-            
-            if (category === 'A7') { // A7 is Helicopter
-                iconClass = 'icon-heli';
-                trailClass = 'trail-heli';
-                // Use the standard infinity symbol
-                iconHTML = `<span class="icon-heli ${iconClass}" style="transform: rotate(${heading}deg); display:inline-block;">&infin;</span>`;
-            
-            } else {
-                // All other types are planes
-                let viewBox = '0 0 24 24'; // Default for planes
-                
-                if (category === 'A6') { // A6 is Military
-                    iconClass = 'icon-mil';
-                    trailClass = 'trail-mil';
-                } else if (category === 'A1' || category === 'A2') { // A1/A2 is General Aviation
-                    iconClass = 'icon-ga';
-                    trailClass = 'trail-ga';
-                } else if (category === 'A3' || category ==="A4" || category === 'A5') { // Commercial
-                    iconClass = 'icon-comm';
-                    trailClass = 'trail-comm';
-                } else { // All others
-                    iconClass = 'icon-other';
-                    trailClass = 'trail-other';
-                }
-                
-                // Use the airliner SVG path for all planes
-                iconHTML = `<svg class="${iconClass}" width="28" height="28" viewBox="${viewBox}" style="transform: rotate(${heading}deg);">
-                                <path d="${PATH_COMMERCIAL}"/>
-                            </svg>`;
-            }
-            
-            // Create the SVG icon for the plane
-            const icon = L.divIcon({
-                className: 'plane-marker',
-                html: iconHTML,
-                iconSize: [28, 28],
-                iconAnchor: [14, 14] // Centers the icon
-            });
-            
-            // If the plane is already on the map, just move its marker
-            if (markers.has(ac.hex)) {
-                const marker = markers.get(ac.hex);
-                marker.setLatLng([ac.lat, ac.lon]);
-                marker.setIcon(icon); // Also update icon in case heading/color/type changed
-            } else {
-                // If it's a new plane, create a new marker
-                const marker = L.marker([ac.lat, ac.lon], { icon }).addTo(map);
-                // Make the marker clickable to show the info box
-                marker.on('click', () => {
-                    const currentAc = aircraftData.get(ac.hex);
-                    if (currentAc) showAircraftInfo(currentAc);
-                });
-                markers.set(ac.hex, marker); // Store the new marker
-            }
-            
-            // Update the plane's trail
-            updateTrail(ac, trailClass);
-        }
-
-        /**
-         * Updates the visual trail line for a single aircraft.
-         */
-        function updateTrail(ac, trailClass) {
-            const trail = trails.get(ac.hex);
-            if (!trail || trail.length < 2) return; // Need at least 2 points to draw a line
-            
-            /*
-             * MODIFICATION: TRAIL COLORS
-             * These colors match the aircraft icon colors from the CSS.
-             * If you change the CSS, change these hex codes to match.
-            */
-            const colors = {
-                'trail-comm': '#0a84ff',  // Commercial (Blue)
-                'trail-ga':   '#30d158',  // General Aviation (Green)
-                'trail-mil':  '#ff375f',  // Military (Red)
-                'trail-heli': '#ff9f0a',  // Helicopter (Orange)
-                'trail-other':'#a2a2d2'   // Other/Unknown (Purple/Gray)
+            state.socket.onopen = () => {
+                console.log('WS Connected');
+                updateConnection('connected');
+                // Wait briefly before sending subscription to ensure connection is stable
+                setTimeout(subscribeToShips, 2000);
             };
             
-            // If the trail line already exists, just update its path and style
-            if (trailLines.has(ac.hex)) {
-                const line = trailLines.get(ac.hex);
-                line.setLatLngs(trail);
-                line.setStyle({ 
-                    color: colors[trailClass] || '#a2a2d2', // Default to 'other' color
-                    opacity: 0.5,
-                    weight: 2
-                });
-            } else {
-                // If it's a new trail, create a new line object
-                const line = L.polyline(trail, {
-                    color: colors[trailClass] || '#a2a2d2',
-                    weight: 2,
-                    opacity: 0.5,
-                    smoothFactor: 1
-                }).addTo(map);
-                trailLines.set(ac.hex, line); // Store the new line
+            state.socket.onmessage = (e) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.type === 'status' && d.message === 'connected') {
+                        subscribeToShips();
+                    } else {
+                        processAIS(d);
+                    }
+                } catch(err) {}
+            };
+            
+            state.socket.onclose = () => {
+                updateConnection('disconnected');
+                // Auto-reconnect logic
+                if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
+                state.reconnectTimer = setTimeout(connectWebSocket, 5000);
+            };
+        }
+
+        function subscribeToShips() {
+            if (state.socket?.readyState === WebSocket.OPEN) {
+                state.socket.send(JSON.stringify({
+                    action: 'subscribe',
+                    BoundingBoxes: [CONFIG.LOCATIONS[state.location].bbox]
+                }));
             }
         }
 
-        /**
-         * Called when you click on an aircraft icon.
-         * It shows the info box and enables "Follow Mode".
-         */
-        function showAircraftInfo(ac) {
-            selectedAircraft = ac.hex;
-            isFollowing = true; // Enable Follow Mode
+        function processAIS(d) {
+            const metadata = d.MetaData;
+            if (!metadata?.MMSI) return;
             
-            // Get all the data for the info box
-            const callsign = ac.flight ? ac.flight.trim() : ac.hex.substring(0, 6).toUpperCase();
-            const type = ac.t || 'Unknown';
-            const altitude = Math.round(ac.alt_baro || ac.alt_geom || 0);
-            const speed = Math.round((ac.gs || 0) * 1.15078); // Convert knots to mph
+            const mmsi = metadata.MMSI;
             
-            // Determine the plane's status based on vertical rate and altitude
-            const vert_rate = ac.baro_rate || ac.geom_rate || 0; 
-            let status = 'Level';
-            if (vert_rate > 350) {
-                status = 'Climbing';
-            } else if (vert_rate < -350) {
-                status = 'Descending';
-            } else if (altitude < 4000 && speed < 220) {
-                status = 'Approach';
-            } else if (speed > 450 && altitude > 25000) {
-                status = 'Cruising';
-            }
-            
-            // Fill in the HTML elements with the data
-            document.getElementById('info-callsign').textContent = callsign;
-            document.getElementById('info-type').textContent = type;
-            document.getElementById('info-altitude').textContent = altitude.toLocaleString() + ' ft';
-            document.getElementById('info-speed').textContent = speed + ' mph';
-            document.getElementById('info-status').textContent = status;
-            
-            // Make the info box visible
-            document.getElementById('aircraft-info').classList.add('visible');
-            
-            // Smoothly zoom/pan the map to the aircraft
-            map.flyTo([ac.lat, ac.lon], 11, {
-                duration: 0.8,
-                easeLinearity: 0.25
-            });
-        }
+            // Get existing or create new vessel record
+            let vessel = layers.vessels.data.get(mmsi) || {
+                mmsi: mmsi,
+                name: metadata.ShipName || `MMSI ${mmsi}`,
+                typeInt: 0,
+                speed: 0,
+                heading: 0,
+                lat: null,
+                lon: null
+            };
 
-        /**
-         * Hides the aircraft info box and disables "Follow Mode".
-         */
-        function hideAircraftInfo() {
-            isFollowing = false; // Disable Follow Mode
-            selectedAircraft = null;
-            document.getElementById('aircraft-info').classList.remove('visible');
-        }
-
-        /**
-         * This function simply listens for a click on the map
-         * (but not on a plane) to hide the info box.
-         */
-        function autoHideHeader() {
-            map.on('click', (e) => {
-                // If the click was on a plane icon, do nothing
-                if (e.originalEvent.target.tagName === 'path' || e.originalEvent.target.tagName === 'SPAN') return;
+            // Handle different message types
+            if (d.MessageType === 'PositionReport' && metadata.latitude && metadata.longitude) {
+                vessel.lat = metadata.latitude;
+                vessel.lon = metadata.longitude;
+                vessel.speed = d.Message.PositionReport.Sog || 0;
+                vessel.heading = d.Message.PositionReport.TrueHeading || 0;
                 
-                // Otherwise, hide the info box
-                hideAircraftInfo();
+                if (vessel.speed < 0.1) return; // Filter out stationary ships
+            } else if (d.MessageType === 'ShipStaticData') {
+                vessel.name = d.Message.ShipStaticData.Name || vessel.name;
+                vessel.typeInt = d.Message.ShipStaticData.Type;
+                vessel.dest = d.Message.ShipStaticData.Destination;
+            }
+
+            layers.vessels.data.set(mmsi, vessel);
+
+            // Only update map if we have valid coordinates
+            if (vessel.lat) {
+                if (!layers.vessels.trails.has(mmsi)) {
+                    layers.vessels.trails.set(mmsi, []);
+                }
+                
+                const trail = layers.vessels.trails.get(mmsi);
+                trail.push([vessel.lat, vessel.lon]);
+                if (trail.length > 100) trail.shift();
+                
+                updateVesselMarker(vessel, trail);
+                updateStats();
+            }
+        }
+
+        function updateVesselMarker(vessel, trail) {
+            if (vessel.mmsi === state.selectedItem && state.isFollowing) {
+                state.map.panTo([vessel.lat, vessel.lon]);
+            }
+            
+            // Determine color based on ship type
+            let color = CONFIG.COLORS.OTHER;
+            if (vessel.typeInt >= 70 && vessel.typeInt <= 79) color = CONFIG.COLORS.COMM; // Cargo
+            else if (vessel.typeInt >= 80) color = CONFIG.COLORS.MIL; // Tanker/Hazard (Red)
+            else if (vessel.typeInt >= 60 && vessel.typeInt <= 69) color = CONFIG.COLORS.GA; // Passenger
+            
+            const icon = createHudIcon('ship', vessel.heading, color, false, CONFIG.PATHS.SHIP);
+
+            if (layers.vessels.markers.has(vessel.mmsi)) {
+                layers.vessels.markers.get(vessel.mmsi).setLatLng([vessel.lat, vessel.lon]).setIcon(icon);
+            } else {
+                const m = L.marker([vessel.lat, vessel.lon], { icon }).addTo(state.map);
+                m.on('click', () => showInfo('vessel', layers.vessels.data.get(vessel.mmsi)));
+                layers.vessels.markers.set(vessel.mmsi, m);
+            }
+            
+            updateTrailLine(layers.vessels.lines, vessel.mmsi, trail, color);
+        }
+
+        // --- DATA FETCHING: INCIDENTS (Seattle Only) ---
+        async function fetchFireIncidents() {
+            if (state.location !== 'SEA') return;
+            
+            try {
+                // Calculate timestamp for 10 hours ago
+                const time = new Date(Date.now() - 36000000).toISOString().split('.')[0];
+                const res = await fetch(`${CONFIG.URLS.SEATTLE_911}?$where=datetime>'${time}'`);
+                
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                
+                data.forEach(inc => {
+                    if (!inc.latitude) return;
+                    
+                    layers.incidents.data.set(inc.incident_number, inc);
+                    
+                    if (!layers.incidents.markers.has(inc.incident_number)) {
+                        // **** FIXED: className: '' removes white box ****
+                        const icon = L.divIcon({ 
+                            className: 'marker-icon incident-marker', 
+                            html: '🔥', 
+                            iconSize: [24,24], 
+                            iconAnchor: [12,12] 
+                        });
+                        
+                        const m = L.marker([inc.latitude, inc.longitude], { icon }).addTo(state.map);
+                        m.on('click', () => showInfo('incident', inc));
+                        layers.incidents.markers.set(inc.incident_number, m);
+                    }
+                });
+                updateStats();
+            } catch(e) {}
+        }
+
+        // --- HELPER FUNCTIONS ---
+        function createHudIcon(type, rotation, color, isText = false, path = CONFIG.PATHS.PLANE) {
+            // Generates the SVG icon or Text icon (for helicopters)
+            const html = isText 
+                ? `<span style="color:${color}; transform: rotate(${rotation}deg); display:inline-block; font-size:24px;">&infin;</span>`
+                : `<svg width="24" height="24" viewBox="0 0 24 24" style="transform: rotate(${rotation}deg); filter: drop-shadow(0 0 1px ${color});"><path fill="${color}" d="${path}"/></svg>`;
+            
+            return L.divIcon({
+                className: 'marker-icon', // Custom class for transition effects
+                html: html,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
             });
         }
 
-        /**
-         * Tries to automatically play the ATC audio on load (muted).
-         * This is a workaround for browser autoplay restrictions.
-         */
+        function updateTrailLine(lineMap, id, trail, color) {
+            if (trail.length < 2) return;
+            
+            if (lineMap.has(id)) {
+                lineMap.get(id).setLatLngs(trail).setStyle({ color, opacity: 0.6, weight: 2 });
+            } else {
+                const line = L.polyline(trail, { color, opacity: 0.6, weight: 2 }).addTo(state.map);
+                lineMap.set(id, line);
+            }
+        }
+
+        // --- INFO WINDOW ---
+        function showInfo(type, data) {
+            state.selectedItem = data.hex || data.mmsi || data.incident_number;
+            state.isFollowing = true;
+            
+            // Hide all sections first
+            ['aircraft-info', 'vessel-info', 'incident-info'].forEach(id => document.getElementById(id).style.display = 'none');
+            
+            if (type === 'plane') {
+                setText('ac-callsign', data.flight?.trim() || data.hex);
+                setText('ac-type', data.t || 'UNKNOWN');
+                setText('ac-alt', (data.alt_baro||0).toLocaleString() + ' ft');
+                setText('ac-spd', Math.round((data.gs||0)*1.15) + ' mph');
+                
+                // Vertical rate logic
+                const vRate = data.baro_rate || 0;
+                setText('ac-stat', (vRate > 350 ? 'CLIMB' : vRate < -350 ? 'DESC' : 'LEVEL'));
+                
+                document.getElementById('aircraft-info').style.display = 'block';
+                state.map.flyTo([data.lat, data.lon], 11, { duration: 0.8 });
+            
+            } else if (type === 'vessel') {
+                setText('vs-name', data.name);
+                setText('vs-type', data.typeInt ? 'TYPE ' + data.typeInt : 'VESSEL');
+                setText('vs-spd', data.speed.toFixed(1) + ' kts');
+                setText('vs-hdg', Math.round(data.heading) + '°');
+                setText('vs-dest', data.dest || 'N/A');
+                
+                document.getElementById('vessel-info').style.display = 'block';
+                state.map.flyTo([data.lat, data.lon], 13, { duration: 0.8 });
+            
+            } else {
+                setText('inc-type', data.type);
+                setText('inc-addr', data.address);
+                setText('inc-id', data.incident_number);
+                setText('inc-time', new Date(data.datetime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}));
+                
+                document.getElementById('incident-info').style.display = 'block';
+                state.map.flyTo([data.latitude, data.longitude], 15, { duration: 0.8 });
+            }
+            
+            document.getElementById('info-panel').classList.add('visible');
+        }
+
+        function hideInfoBox() {
+            state.isFollowing = false;
+            state.selectedItem = null;
+            document.getElementById('info-panel').classList.remove('visible');
+        }
+
+        function recenterView() {
+            const loc = CONFIG.LOCATIONS[state.location];
+            // Use viewLat/Lon if available
+            const centerLat = loc.viewLat || loc.lat;
+            const centerLon = loc.viewLon || loc.lon;
+            
+            state.map.flyTo([centerLat, centerLon], loc.zoom, { duration: 1 });
+            hideInfoBox();
+        }
+
+        function toggleRadar() {
+            state.isRadarOn = !state.isRadarOn;
+            const btn = document.getElementById('radar-control');
+            
+            if (state.isRadarOn) {
+                layers.radar.addTo(state.map);
+                btn.classList.add('active');
+                btn.textContent = "RADAR: ON";
+            } else {
+                state.map.removeLayer(layers.radar);
+                btn.classList.remove('active');
+                btn.textContent = "RADAR: OFF";
+            }
+        }
+
+        function toggleAudio() {
+            const ctrl = document.getElementById('audio-control');
+            
+            if (state.audioElement.paused) {
+                state.audioElement.play();
+                ctrl.classList.add('playing');
+                document.getElementById('audio-text').textContent = 'ATC LIVE';
+            } else {
+                state.audioElement.pause();
+                ctrl.classList.remove('playing');
+                document.getElementById('audio-text').textContent = 'ATC OFFLINE';
+            }
+        }
+
+        function handleAudioChange(url) {
+            const wasPlaying = !state.audioElement.paused;
+            state.audioElement.src = url;
+            
+            if (wasPlaying) {
+                state.audioElement.play().catch(()=>{});
+            } else {
+                document.getElementById('audio-text').textContent = 'ATC OFFLINE';
+                document.getElementById('audio-control').classList.remove('playing');
+            }
+        }
+
         function autoStartAudio() {
-            const audio = document.getElementById('audio');
-            const text = document.getElementById('audio-text');
-            audio.src = AIRPORTS[currentAirport].audio;
-            audio.muted = true; // Must be muted to autoplay
-            audio.play().then(() => {
-                // If autoplay succeeds, unmute after a short delay
+            state.audioElement.src = CONFIG.LOCATIONS[state.location].audio;
+            state.audioElement.muted = true;
+            
+            state.audioElement.play().then(() => {
                 setTimeout(() => { 
-                    audio.muted = false;
-                    text.textContent = 'ATC Live';
+                    state.audioElement.muted = false;
+                    document.getElementById('audio-text').textContent = 'ATC LIVE';
                 }, 500);
                 document.getElementById('audio-control').classList.add('playing');
-            }).catch(() => {
-                // Autoplay was blocked by the browser.
-                // The user will have to click the button manually.
-            });
+            }).catch(() => {});
         }
 
-        /**
-         * Toggles the ATC audio on or off when the button is clicked.
-         */
-        function toggleAudio() {
-            const audio = document.getElementById('audio');
-            const control = document.getElementById('audio-control');
-            const text = document.getElementById('audio-text');
+        // --- UTILITY FUNCTIONS ---
+        function setText(id, txt) {
+            document.getElementById(id).textContent = txt;
+        }
+
+        function updateStats() {
+            setText('aircraft-count', layers.planes.data.size);
+            setText('vessel-count', layers.vessels.data.size);
+            setText('incident-count', state.location === 'SEA' ? layers.incidents.data.size : 0);
+        }
+
+        function updateClock() {
+            const d = new Date();
+            const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            setText('current-time', timeStr);
+        }
+
+        function pad(n) {
+            return n.toString().padStart(2,'0');
+        }
+
+        function updateLocationTitle() {
+            setText('location-title', CONFIG.LOCATIONS[state.location].name);
+        }
+
+        function updateConnection(status) {
+            const ind = document.getElementById('status-indicator');
+            ind.className = `status-indicator ${status}`;
             
-            if (audio.paused) {
-                audio.play();
-                control.classList.add('playing');
-                text.textContent = 'ATC Live';
-            } else {
-                audio.pause();
-                control.classList.remove('playing');
-                text.textContent = 'Listen to ATC';
-            }
+            let text = 'OFFLINE';
+            if (status === 'connected') text = 'FEED ONLINE';
+            if (status === 'connecting') text = 'CONNECTING';
+            
+            setText('status-text', text);
         }
 
-        /**
-         * Called when the "Recenter" button is clicked.
-         * Moves the map back to the currently selected airport.
-         */
-        function recenterView() {
-            isFollowing = false; // Disable Follow Mode
-            const airport = AIRPORTS[currentAirport];
-            map.flyTo([airport.lat, airport.lon], airport.zoom, {
-                duration: 1,
-                easeLinearity: 0.25
-            });
-            hideAircraftInfo(); // Hide the info box
-        }
-
-        /**
-         * Starts the main data fetch loop.
-         * We run an initial fetch cycle to build up trails,
-         * then start the regular 2-second interval.
-         */
         function startTracking() {
-            // This helper function fetches data multiple times on load
-            // to build up the trails immediately.
-            const buildTrails = async () => {
-                for (let i = 0; i < 5; i++) {
-                    await fetchAircraft();
-                    // Wait 2 seconds between fetches to get new data points
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-            };
+            fetchPlanes();
+            setInterval(fetchPlanes, 3000);
             
-            // Run the trail-building function first...
-            buildTrails().then(() => {
-                // ...and *then* start the regular 2-second update interval.
-                // MODIFICATION: You can change `2000` to a different number
-                // (in milliseconds) to fetch more or less frequently.
-                setInterval(fetchAircraft, 2000);
-            });
+            connectWebSocket();
+            
+            fetchFireIncidents();
+            setInterval(fetchFireIncidents, 30000);
         }
 
-        // --- SECTION 3: START THE APP ---
-
-        // This is the only function called automatically.
-        // It starts the entire application.
+        // Kickoff
         init();
     </script>
 </body>
