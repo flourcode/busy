@@ -4,384 +4,794 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#171c1b">
-    <title>ODIN Common Operational Picture</title>
+    <meta name="theme-color" content="#0d1f19">
+    <title>AIRPORT 2025</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         /* =========================================================================
-           STYLE GUIDE: DIY Common Operational Picture
-           -------------------------------------------------------------------------
-           This CSS provides the high-contrast, "command center" aesthetic.
-           The map is inverted and heavily filtered (grayscale, high contrast).
+           STYLE GUIDE: All Greens / Night Vision
+           Primary Accent: #a8c256 (Bright Lime)
+           Secondary:      #6b9b37 (Medium Green)
+           Tertiary:       #8ba876 (Muted Green)
+           Backgrounds:    #4a7c59 -> #0d1f19 (Light to Dark)
+           Text:           #f1f8e9 (Off White)
         ========================================================================= */
 
-        /* --- CORE RESET & LAYOUT --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            /* Palette Definition */
+            --g-accent-1: #a8c256; /* Critical / Active */
+            --g-accent-2: #6b9b37; /* Secondary Highlight */
+            --g-text-muted: #8ba876; /* Labels */
+            --g-text-main: #f1f8e9;  /* Off White */
+            
+            --g-bg-1: #4a7c59;
+            --g-bg-2: #3d5e4a; /* Borders */
+            --g-bg-3: #2d4a3a;
+            --g-bg-4: #1a3a2e; /* Panel BG */
+            --g-bg-5: #0d1f19; /* Deepest Background */
+
+            /* Functional Mappings */
+            --color-sky: #6C8075;
+            --color-ground: #0d1f19;
+            
+            --color-panel-bg: #1a3a2e;      
+            --color-panel-border: #3d5e4a;  
+            --color-text-main: var(--g-text-main);     
+            --color-text-muted: var(--g-text-muted);
+            
+            --color-highlight: var(--g-accent-1);         
+            
+            /* Entity Colors (All shades of green now) */
+            --color-comm: #a8c256; /* Brightest for commercial */
+            --color-ga: #6b9b37;   /* Mid-green for GA */
+            --color-mil: #f1f8e9;  /* White/Green for Mil (pop out) */
+            --color-ship: #4a7c59; /* Muted background green */
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
         }
         
         html, body {
-            height: 100vh;
+            height: 100vh; 
             height: 100dvh;
-            background: #171c1b; 
-            font-family: 'Rajdhani', sans-serif;
-            color: #d1d4d3; 
+            background: var(--g-bg-5); 
+            font-family: 'Inter', sans-serif; 
+            color: var(--color-text-main); 
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
         }
 
-        #map {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            z-index: 0;
+        #map { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100vh; 
+            z-index: 0; 
+            background: var(--g-bg-5);
         }
         
-        /* Map Tile Filter: Invert and desaturate the base OpenStreetMap tiles */
-        .map-tiles {
-            filter: invert(100%) grayscale(90%) hue-rotate(130deg) brightness(90%) contrast(130%);
+        /* Map Tile Filter - Night Vision Green Effect */
+        .map-tiles { 
+            filter: grayscale(50%) invert(100%) sepia(50%) hue-rotate(70deg) saturate(80%) brightness(0.7) contrast(1.2);
         }
-        
-        /* Radar Overlay Filter: Ensures weather radar pops against the dark map */
-        .radar-tiles {
-            filter: blur(0.5px) contrast(1.2) saturate(1.2);
-            image-rendering: optimizeQuality;
+        /* Radar Filter - Force weather into green spectrum */
+        .radar-tiles { 
+           
         }
 
         /* --- HEADER & CONTROLS --- */
-        .header-info {
-            position: fixed; top: 16px; left: 16px; z-index: 1000;
+        .header-info { 
+            position: fixed; 
+            top: 16px; 
+            left: 16px; 
+            z-index: 1000; 
+            pointer-events: none;
         }
 
-        .mission-id {
-            font-family: 'Share Tech Mono', monospace; font-size: 9px; color: rgba(209, 212, 211, 0.6); letter-spacing: 1.5px; margin-bottom: 2px;
+        .mission-id { 
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 11px; 
+            color: var(--g-accent-1); 
+            letter-spacing: 1px; 
+            margin-bottom: 4px; 
+            background: rgba(13, 31, 25, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            border: 1px solid var(--g-bg-2);
         }
 
         .location-title {
-            font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: 2px; text-transform: uppercase;
-            text-shadow: 0 0 20px rgba(0, 163, 110, 0.5); /* Green shadow for dramatic effect */
+            font-family: 'Inter', sans-serif; 
+            font-size: 24px; 
+            font-weight: 700; 
+            color: var(--g-text-main); 
+            letter-spacing: 0.5px; 
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(168, 194, 86, 0.3);
         }
 
-        .header-controls {
-            position: fixed; top: 16px; right: 16px; z-index: 1000; display: flex; align-items: center; gap: 12px;
+        .header-controls { 
+            position: fixed; 
+            top: 16px; 
+            right: 16px; 
+            z-index: 1000; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+
+        /* Universal Panel Style */
+        .panel-style {
+            background: var(--color-panel-bg); 
+            border: 1px solid var(--color-panel-border); 
+            border-radius: 6px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         }
 
         .location-badge {
-            background: rgba(23, 28, 27, 0.95); border: 1px solid rgba(0, 163, 110, 0.3); padding: 6px 16px; display: flex; align-items: center; gap: 8px;
-            clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px); /* Beveled corner top-left */
+            padding: 6px 12px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
         }
 
-        .location-icon {
-            width: 6px; height: 6px; background: #00a36e; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-            animation: pulse-location 2s ease-in-out infinite;
+        /* Recenter Button Style */
+        .recenter-btn {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            stroke: var(--g-text-muted);
         }
-        @keyframes pulse-location { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .recenter-btn:hover {
+            stroke: var(--g-accent-1);
+            transform: scale(1.1);
+        }
+        .recenter-btn:active {
+            transform: scale(0.95);
+        }
 
-        .location-selector {
-            background: rgba(23, 28, 27, 0.95); border: none; color: #00a36e; font-family: 'Share Tech Mono', monospace; font-size: 13px; font-weight: 600;
-            letter-spacing: 2px; cursor: pointer; outline: none; text-transform: uppercase; padding: 0; margin: 0; min-width: 45px;
-            -webkit-appearance: none; appearance: none;
+        /* --- REPLACEMENT CSS --- */
+
+.location-selector {
+    /* Remove default system background to allow our color */
+    background-color: transparent; 
+    border: none; 
+    
+    /* Use the primary accent for the collapsed view so it pops */
+    color: var(--g-accent-1); 
+    
+    font-family: 'Inter', sans-serif; 
+    font-size: 13px; 
+    font-weight: 700;
+    cursor: pointer; 
+    outline: none; 
+    text-transform: uppercase; 
+    
+    /* Fix for Firefox/IE arrow rendering */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    
+    /* Add some padding since we removed the arrow */
+    padding-right: 15px; 
+}
+
+/* This is the critical part for the dropdown list contrast */
+.location-selector option {
+    background-color: var(--g-bg-5); /* #0d1f19 - Deepest Green */
+    color: var(--g-text-main);       /* #f1f8e9 - Off White */
+    padding: 10px;
+    font-weight: 500;
+}
+
+.location-selector:hover {
+    text-shadow: 0 0 5px rgba(168, 194, 86, 0.5);
+}
+
+        .control-btn {
+            padding: 6px 12px; 
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px; 
+            color: var(--g-text-muted); 
+            letter-spacing: 1px; 
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
         }
 
-        .radar-control {
-            background: rgba(23, 28, 27, 0.95); border: 1px solid rgba(209, 212, 211, 0.1); padding: 6px 12px; font-family: 'Share Tech Mono', monospace;
-            font-size: 11px; color: rgba(209, 212, 211, 0.6); letter-spacing: 1px; cursor: pointer;
-            clip-path: polygon(4px 0, 100% 0, 100% 100%, 0 100%, 0 4px); transition: all 0.2s ease;
-        }
-        .radar-control:hover { border-color: #00a36e; color: #ffffff; }
-        .radar-control.active {
-            border-color: #00a36e; color: #00a36e; background: rgba(23, 28, 27, 0.95);
-            box-shadow: 0 0 15px rgba(0, 163, 110, 0.2); text-shadow: 0 0 5px rgba(0, 163, 110, 0.5);
+        .control-btn.active {
+            border-color: var(--g-accent-1); 
+            color: var(--g-bg-5); 
+            background: var(--g-accent-1); 
+            font-weight: bold;
         }
 
         .time-display {
-            background: rgba(23, 28, 27, 0.95); border: 1px solid rgba(209, 212, 211, 0.1); padding: 6px 12px;
-            font-family: 'Share Tech Mono', monospace; font-size: 11px; color: rgba(209, 212, 211, 0.6); letter-spacing: 1px;
-            clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+            padding: 6px 12px;
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 12px; 
+            color: var(--g-accent-1); 
+            min-width: 80px;
+            text-align: center;
         }
 
-        /* --- LEFT SIDEBAR (METRICS) --- */
-        .metrics-panel { position: fixed; left: 16px; top: 80px; z-index: 900; width: 160px; }
+        /* --- METRICS --- */
+        .metrics-panel { 
+            position: fixed; 
+            left: 16px; 
+            top: 80px; 
+            z-index: 900; 
+            width: 140px; 
+            pointer-events: none; 
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .metric-block {
-            background: rgba(23, 28, 27, 0.95); border: 1px solid rgba(209, 212, 211, 0.1); margin-bottom: 2px; padding: 12px; position: relative;
-            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+            background: rgba(26, 58, 46, 0.9); 
+            border-left: 4px solid var(--g-bg-2); 
+            padding: 8px 12px; 
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-        .metric-block::before { content: ''; position: absolute; top: 0; right: 0; width: 10px; height: 10px; border-top: 1px solid rgba(209, 212, 211, 0.1); border-right: 1px solid rgba(209, 212, 211, 0.1); }
-        .metric-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: rgba(209, 212, 211, 0.6); letter-spacing: 1px; margin-bottom: 6px; text-transform: uppercase; }
-        .metric-value { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; color: #ffffff; line-height: 1; letter-spacing: 1px; }
-        .metric-subtext { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: rgba(209, 212, 211, 0.3); margin-top: 4px; letter-spacing: 0.5px; }
 
-        /* Semantic colors for data values */
-        .metric-block.aircraft .metric-value { color: #00d9ff; text-shadow: 0 0 10px rgba(0, 217, 255, 0.3); } /* Blue */
-        .metric-block.vessels .metric-value { color: #00a36e; text-shadow: 0 0 10px rgba(0, 163, 110, 0.3); } /* Green */
-        .metric-block.incidents .metric-value { color: #ff0064; text-shadow: 0 0 10px rgba(255, 0, 100, 0.3); } /* Red/Pink */
+        .metric-label { 
+            font-family: 'Inter', sans-serif; 
+            font-size: 10px; 
+            font-weight: 600;
+            color: var(--g-text-muted); 
+            margin-bottom: 2px; 
+            text-transform: uppercase;
+        }
 
-        /* --- RIGHT SIDEBAR (LEGEND) --- */
+        .metric-value { 
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 22px; 
+            font-weight: 500; 
+            color: var(--g-text-main); 
+        }
+
+        .metric-block.aircraft { border-left-color: var(--g-accent-1); }
+        .metric-block.vessels { border-left-color: var(--g-bg-1); }
+        .metric-block.incidents { border-left-color: var(--g-accent-2); }
+
+        /* --- LEGEND --- */
         .legend-panel {
-            position: fixed; right: 16px; top: 80px; z-index: 900; width: 180px; background: rgba(23, 28, 27, 0.95);
-            border: 1px solid rgba(209, 212, 211, 0.1); clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 900;
+            background: var(--color-panel-bg);
+            border: 1px solid var(--color-panel-border);
+            border-radius: 6px;
+            padding: 12px;
+            width: 160px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
-        .legend-panel::before { content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-top: 1px solid rgba(209, 212, 211, 0.1); border-left: 1px solid rgba(209, 212, 211, 0.1); }
-        .legend-header { padding: 12px; border-bottom: 1px solid rgba(209, 212, 211, 0.1); font-family: 'Share Tech Mono', monospace; font-size: 9px; color: rgba(209, 212, 211, 0.5); letter-spacing: 1.5px; text-transform: uppercase; }
-        .legend-content { padding: 12px; }
-        .legend-section { margin-bottom: 20px; }
-        .legend-section:last-child { margin-bottom: 0; }
-        .legend-section-title {
-            font-family: 'Share Tech Mono', monospace; font-size: 9px; color: rgba(209, 212, 211, 0.4); letter-spacing: 1.5px;
-            margin-bottom: 10px; text-transform: uppercase; padding-left: 8px; border-left: 2px solid rgba(0, 163, 110, 0.3);
+        .legend-header {
+            font-size: 10px;
+            color: var(--g-text-muted);
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: 1px;
         }
-        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; color: rgba(209, 212, 211, 0.6); font-weight: 500; }
-        .legend-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .legend-icon svg { filter: drop-shadow(0 0 1px currentColor); }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
+        .legend-item:last-child { margin-bottom: 0; }
+        .legend-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
+        .legend-item span { font-size: 11px; color: var(--g-text-main); }
 
-        /* --- BOTTOM INFO PANEL --- */
+
+        /* --- INFO PANEL (HUD STYLE) --- */
         .info-panel {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 900;
-            background: rgba(23, 28, 27, 0.98); border: 1px solid rgba(0, 163, 110, 0.3); width: 600px;
-            opacity: 0; pointer-events: none; transition: all 0.3s ease;
-            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+            position: fixed; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            z-index: 900;
+            background: var(--g-bg-5); 
+            border: 4px solid var(--g-bg-2); 
+            width: 500px; 
+            max-width: 95vw;
+            height: 280px; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.3s ease;
+            border-radius: 12px; 
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        .info-panel::before { content: ''; position: absolute; top: 0; left: 0; width: 20px; height: 20px; border-top: 1px solid rgba(0, 163, 110, 0.3); border-left: 1px solid rgba(0, 163, 110, 0.3); }
-        .info-panel::after { content: ''; position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; border-bottom: 1px solid rgba(0, 163, 110, 0.3); border-right: 1px solid rgba(0, 163, 110, 0.3); }
-        .info-panel.visible { opacity: 1; pointer-events: all; }
-        .info-header { padding: 20px 24px; border-bottom: 1px solid rgba(209, 212, 211, 0.1); }
-        .info-title { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: 2px; margin-bottom: 4px; }
-        .info-subtitle { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: rgba(209, 212, 211, 0.4); letter-spacing: 1.5px; text-transform: uppercase; }
-        .info-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
-        .info-stats-2col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
-        .info-stat { padding: 20px; text-align: center; border-right: 1px solid rgba(209, 212, 211, 0.05); border-bottom: 1px solid rgba(209, 212, 211, 0.05); }
+
+        .info-panel.visible { 
+            opacity: 1; 
+            pointer-events: all; 
+        }
+
+        /* PFD Data Overlay */
+        .pfd-data-overlay {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%;
+            padding: 16px 20px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            z-index: 20;
+            pointer-events: none;
+        }
+        
+        .info-title { 
+            font-family: 'Inter', sans-serif; 
+            font-size: 20px; 
+            font-weight: 700; 
+            color: var(--g-text-main); 
+            line-height: 1;
+            padding: 8px;
+            background-color: rgba(13, 31, 25, 0.6);
+            border: 1px solid var(--g-bg-3);
+        }
+        .info-subtitle { 
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 18px; 
+			font-weight: 700;
+            color: var(--g-accent-1); 
+            letter-spacing: 1px; 
+            text-transform: uppercase; 
+            margin-top: 2px; 
+            padding: 8px;
+            background-color: rgba(13, 31, 25, 0.6);
+            border: 1px solid var(--g-bg-3);
+            border-top: none;
+        }
+        
+        .info-reg {
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 14px; 
+            color: var(--g-text-muted); 
+            letter-spacing: 1px; 
+            text-transform: uppercase; 
+            margin-top: 2px; 
+			padding: 8px;
+            background-color: rgba(13, 31, 25, 0.6);
+            border: 1px solid var(--g-bg-3);
+            border-top: none;
+        }
+        
+        .pfd-heading-box { text-align: right; }
+        .hdg-value { 
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 24px; 
+            font-weight: 700; 
+            color: var(--g-text-main); 
+            line-height: 1; 
+            padding: 8px;
+            background-color: rgba(13, 31, 25, 0.6);
+            border: 1px solid var(--g-bg-3);
+        }
+
+        /* Bottom Stats Row */
+        .info-stats-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: var(--g-bg-4); 
+            z-index: 20;
+            border-top: 2px solid var(--g-bg-2);
+        }
+
+        .info-stats { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+        }
+
+        .info-stat { 
+            padding: 12px 0; 
+            text-align: center; 
+            border-right: 1px solid var(--g-bg-2); 
+        }
+        
         .info-stat:last-child { border-right: none; }
-        .info-stat-value { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; color: #00a36e; margin-bottom: 4px; text-shadow: 0 0 10px rgba(0, 163, 110, 0.3); }
-        .info-stat-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: rgba(209, 212, 211, 0.4); letter-spacing: 1.5px; text-transform: uppercase; }
+        .info-stat-value { 
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 22px; 
+            font-weight: 500; 
+            color: var(--g-text-main); 
+            margin-bottom: 2px; 
+            text-shadow: 0 0 5px rgba(168, 194, 86, 0.2);
+        }
+        .info-stat-label { 
+            font-family: 'Inter', sans-serif; 
+            font-size: 9px; 
+            font-weight: 600;
+            color: var(--g-text-muted); 
+            letter-spacing: 0.5px; 
+            text-transform: uppercase; 
+        }
+
+        /* --- ARTIFICIAL HORIZON (GREEN THEME) --- */
+        #ahrs-full-display {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            z-index: 0; 
+            overflow: hidden; 
+            background: var(--g-bg-5);
+        }
+
+        .ahrs-horizon-wrapper {
+            width: 300%; 
+            height: 300%; 
+            position: absolute; 
+            top: -100%; 
+            left: -100%;
+            will-change: transform; 
+            transition: transform 0.2s linear;
+        }
+
+        .ahrs-sky { 
+            width: 100%; 
+            height: 50%; 
+            background: var(--color-sky); 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+        }
+
+        .ahrs-ground { 
+            width: 100%; 
+            height: 50%; 
+            background: var(--g-bg-5); 
+            position: absolute; 
+            top: 50%; 
+            left: 0; 
+            border-top: 2px solid var(--g-accent-1); 
+        }
+
+        .ahrs-ladder { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 33.33%; 
+            height: 33.33%; 
+            opacity: 0.9; 
+        }
+
+        .ahrs-crosshair { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 180px; 
+            height: 60px; 
+            z-index: 5; 
+            pointer-events: none; 
+        }
+
+        /* --- TARGET RETICLE --- */
+        .target-reticle-icon { 
+            pointer-events: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+
+        .reticle-ring {
+            position: absolute; 
+            width: 60px; 
+            height: 60px;
+            border: 4px solid var(--g-accent-1); 
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--g-accent-1);
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.0); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
 
         /* --- FOOTER CONTROLS --- */
-        .audio-control {
-            position: fixed; bottom: 20px; left: 20px; z-index: 900; background: rgba(23, 28, 27, 0.95); border: 1px solid rgba(209, 212, 211, 0.1);
-            padding: 12px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer;
-            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+        .audio-control { 
+            position: fixed; 
+            bottom: 20px; 
+            left: 20px; 
+            z-index: 900; 
+            background: var(--color-panel-bg); 
+            border: 1px solid var(--color-panel-border); 
+            padding: 8px 12px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            white-space: nowrap; 
+            min-width: 100px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-        .audio-control::before { content: ''; position: absolute; top: 0; right: 0; width: 10px; height: 10px; border-top: 1px solid rgba(209, 212, 211, 0.1); border-right: 1px solid rgba(209, 212, 211, 0.1); }
-        .audio-control:hover { border-color: rgba(0, 163, 110, 0.3); }
-        .audio-control.playing { border-color: rgba(0, 163, 110, 0.6); background: rgba(23, 28, 27, 0.95); }
-        .audio-control svg { width: 16px; height: 16px; fill: rgba(209, 212, 211, 0.6); }
-        .audio-control.playing svg { fill: #00a36e; }
-        .audio-text { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: rgba(209, 212, 211, 0.6); letter-spacing: 1.5px; text-transform: uppercase; }
-        .audio-control.playing .audio-text { color: #00a36e; }
+        .audio-control.playing svg { fill: var(--g-accent-1); } 
+        .audio-control svg { fill: var(--g-text-muted); }
+        .audio-text { font-family: 'Inter', sans-serif; font-weight:600; font-size: 11px; color: var(--g-text-main); }
 
-        .connection-status {
-            position: fixed; bottom: 20px; right: 20px; z-index: 900; background: rgba(23, 28, 27, 0.95); border: 1px solid rgba(209, 212, 211, 0.1);
-            padding: 12px 16px; display: flex; align-items: center; gap: 10px;
-            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
-        }
-        .connection-status::before { content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-top: 1px solid rgba(209, 212, 211, 0.1); border-left: 1px solid rgba(209, 212, 211, 0.1); }
-        .status-indicator { width: 8px; height: 8px; background: rgba(209, 212, 211, 0.3); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
-        .status-indicator.connected { background: #00a36e; animation: pulse-status 2s ease-in-out infinite; }
-        .status-indicator.connecting { background: #ffa500; }
-        .status-indicator.disconnected { background: #ff0064; }
-        @keyframes pulse-status { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .status-text { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: rgba(209, 212, 211, 0.6); letter-spacing: 1.5px; text-transform: uppercase; }
-
-        /* --- MARKER STYLING & LEAFLET OVERRIDES --- */
-        .plane-marker, .vessel-marker { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .plane-marker svg, .vessel-marker svg { filter: drop-shadow(0 0 1px currentColor); }
-        .incident-marker { font-size: 12px; filter: drop-shadow(0 0 1px rgba(255, 0, 100, 0.8)); }
-        /* Custom location markers are SVG + text label */
-        .location-marker-wrapper { text-align: center; }
-        .location-marker-svg .marker-outer-ring { fill: rgba(0, 163, 110, 0.1); stroke: rgba(0, 163, 110, 0.8); stroke-width: 2px; }
-        .location-marker-svg .marker-inner-dot { fill: rgba(0, 163, 110, 0.9); }
-        .location-marker-label {
-            background: rgba(23, 28, 27, 0.95); border: 1px solid rgba(0, 163, 110, 0.5); color: #00a36e;
-            font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: 600; padding: 6px 12px;
-            margin-top: 4px; white-space: nowrap; letter-spacing: 2px;
-            clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
-        }
-        .leaflet-control-attribution { background: rgba(23, 28, 27, 0.9) !important; color: rgba(209, 212, 211, 0.3) !important; font-size: 9px !important; padding: 4px 8px !important; border: 1px solid rgba(209, 212, 211, 0.1) !important; }
-        .leaflet-control-attribution a { color: rgba(0, 163, 110, 0.6) !important; }
-
-        /* --- MOBILE RESPONSIVE --- */
         @media (max-width: 768px) {
-            .header-info { top: 12px; left: 12px; }
-            .mission-id { font-size: 8px; }
-            .location-title { font-size: 18px; }
-            .header-controls { top: 12px; right: 12px; gap: 8px; }
-            .time-display, .radar-control { padding: 5px 8px; font-size: 10px; }
-            .metrics-panel { left: 12px; top: 65px; width: 140px; }
-            .metric-block { padding: 10px; }
-            .metric-value { font-size: 28px; }
             .legend-panel { display: none; }
-            .legend-header { padding: 10px; font-size: 8px; }
-            .info-panel { bottom: 12px; left: 12px; right: 12px; width: auto; transform: none; }
-            .audio-control, .connection-status { bottom: 12px; padding: 10px 14px; }
-            .audio-control { left: 12px; }
-            .connection-status { right: 12px; }
+            .info-panel { width: 95%; bottom: 12px; height: 250px; }
         }
+		/* --- CUSTOM DROPDOWN STYLING --- */
+.custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    width: 180px; /* Adjust width as needed */
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.custom-select {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-select__trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--g-accent-1); /* Bright Lime Text */
+    line-height: 20px;
+    background: transparent;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.custom-select__trigger:hover {
+    text-shadow: 0 0 8px rgba(168, 194, 86, 0.6);
+}
+
+/* The Arrow */
+.arrow {
+    position: relative;
+    height: 10px;
+    width: 10px;
+    margin-left: 10px;
+}
+.arrow::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    border: solid var(--g-text-muted);
+    border-width: 0 2px 2px 0;
+    padding: 3px;
+    transform: rotate(45deg);
+    transition: 0.2s;
+}
+.custom-select.open .arrow::after {
+    transform: rotate(-135deg);
+    border-color: var(--g-accent-1);
+}
+
+/* The Dropdown Menu */
+.custom-options {
+    position: absolute;
+    display: block;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 1px solid var(--color-panel-border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    background: var(--g-bg-4); /* #1a3a2e */
+    transition: all 0.2s;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 2000;
+    margin-top: 8px;
+}
+
+.custom-select.open .custom-options {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+}
+
+/* The Options */
+.custom-option {
+    position: relative;
+    display: block;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--g-text-main); /* Off White */
+    cursor: pointer;
+    transition: all 0.1s;
+    border-bottom: 1px solid var(--g-bg-2); /* Separator line */
+}
+
+.custom-option:last-of-type {
+    border-bottom: none;
+}
+
+/* HOVER STATE: High Contrast Green */
+.custom-option:hover,
+.custom-option.selected {
+    background-color: var(--g-accent-1); /* Bright Lime Background */
+    color: var(--g-bg-5);                /* Darkest Green Text */
+    font-weight: 700;
+}
     </style>
 </head>
 <body>
     <div id="map"></div>
 
     <div class="header-info">
-        <div class="mission-id">OPS-LIVE-MONITOR</div>
+        <div class="mission-id">LIVE OPERATIONS</div>
         <div class="location-title" id="location-title">SEATTLE</div>
     </div>
 
     <div class="header-controls">
-        <div class="location-badge">
-            <div class="location-icon"></div>
-            <select id="location-selector" class="location-selector">
-                <option value="JFK" selected>JFK</option>
-                <option value="SEA">SEA</option>
-				<option value="ATL">ATL</option>
-                <option value="DC">DCA</option>
-                <option value="MIA">MIA</option>
-                <option value="DEN">DEN</option>
-                <option value="ORD">ORD</option>
-                <option value="LAX">LAX</option>
-            </select>
+        <div class="location-badge panel-style">
+    <svg id="recenter-btn" class="recenter-btn" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" title="Recenter Map"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+    
+    <div class="custom-select-wrapper">
+        <div class="custom-select">
+            <div class="custom-select__trigger">
+                <span id="selected-text">JFK INT'L</span>
+                <div class="arrow"></div>
+            </div>
+            <div class="custom-options">
+                <span class="custom-option selected" data-value="JFK">JFK INT'L</span>
+                <span class="custom-option" data-value="SEA">SEATTLE-TACOMA</span>
+                <span class="custom-option" data-value="ATL">HARTSFIELD</span>
+                <span class="custom-option" data-value="DC">REAGAN/DULLES</span>
+                <span class="custom-option" data-value="MIA">MIAMI INT'L</span>
+                <span class="custom-option" data-value="DEN">DENVER INT'L</span>
+                <span class="custom-option" data-value="ORD">O'HARE INT'L</span>
+                <span class="custom-option" data-value="LAX">LOS ANGELES</span>
+            </div>
         </div>
-        
-        <div id="radar-control" class="radar-control active">RADAR: ON</div>
-        
-        <div class="time-display" id="current-time">00:00:00</div>
+    </div>
+    </div>
+        <div id="radar-control" class="control-btn panel-style active">RADAR: ON</div>
+        <div class="time-display panel-style" id="current-time">00:00:00</div>
     </div>
 
     <div class="metrics-panel">
         <div class="metric-block aircraft">
-            <div class="metric-label">AIRCRAFT</div>
+            <div class="metric-label">AIR TRAFFIC</div>
             <div class="metric-value" id="aircraft-count">0</div>
-            <div class="metric-subtext">ACTIVE TRACKING</div>
         </div>
         <div class="metric-block vessels">
-            <div class="metric-label">VESSELS</div>
+            <div class="metric-label">MARINE TRAFFIC</div>
             <div class="metric-value" id="vessel-count">0</div>
-            <div class="metric-subtext">MONITORED</div>
         </div>
         <div class="metric-block incidents">
-            <div class="metric-label">INCIDENTS</div>
+            <div class="metric-label">ACTIVE INCIDENTS</div>
             <div class="metric-value" id="incident-count">0</div>
-            <div class="metric-subtext">LAST 3 HOURS</div>
         </div>
     </div>
 
     <div class="legend-panel">
-        <div class="legend-header">LEGEND / CLASSIFICATIONS</div>
+        <div class="legend-header">LEGEND</div>
         <div class="legend-content">
-            <div class="legend-section">
-                <div class="legend-section-title">AIRCRAFT</div>
-                <div class="legend-item">
-                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00d9ff" d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/></svg></div>
-                    <span>COMMERCIAL</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00ff88" d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/></svg></div>
-                    <span>GENERAL AVN</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#ff0064" d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/></svg></div>
-                    <span>MILITARY</span>
-                </div>
-            </div>
-
-            <div class="legend-section">
-                <div class="legend-section-title">VESSELS</div>
-                <div class="legend-item">
-                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00d9ff" d="M12 4 L8 8 L8 19 L16 19 L16 8 Z"/></svg></div>
-                    <span>CARGO</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#00ff88" d="M12 4 L8 8 L8 19 L16 19 L16 8 Z"/></svg></div>
-                    <span>PASSENGER</span>
-                </div>
-            </div>
-
-            <div class="legend-section">
-                <div class="legend-section-title">EMERGENCY</div>
-                <div class="legend-item">
-                    <div class="legend-icon">🔥</div>
-                    <span>FIRE / EMS</span>
-                </div>
-            </div>
+            <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#a8c256;border-radius:50%;box-shadow:0 0 2px #a8c256"></div></div><span>COMMERCIAL</span></div>
+            <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#6b9b37;border-radius:50%"></div></div><span>GENERAL AVN</span></div>
+            <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#f1f8e9;border-radius:50%"></div></div><span>MILITARY</span></div>
+            <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#4a7c59;border-radius:50%"></div></div><span>MARITIME</span></div>
         </div>
     </div>
 
     <div id="info-panel" class="info-panel">
-        <div id="aircraft-info" style="display: none;">
-            <div class="info-header">
-                <div class="info-title" id="ac-callsign"></div>
-                <div class="info-subtitle" id="ac-type"></div>
+        
+        <div id="aircraft-info" style="display: none; height: 100%;">
+            <div id="ahrs-full-display">
+                <div id="ahrs-horizon" class="ahrs-horizon-wrapper">
+                    <div class="ahrs-sky"></div>
+                    <div class="ahrs-ground"></div>
+                    <svg class="ahrs-ladder" viewBox="0 0 400 200" preserveAspectRatio="none">
+                        <line x1="100" y1="50" x2="300" y2="50" stroke="#a8c256" stroke-width="2" opacity="0.6" />
+                        <text x="310" y="54" fill="#a8c256" font-family="Share Tech Mono" font-size="14" opacity="0.8">10</text>
+                        <line x1="150" y1="75" x2="250" y2="75" stroke="#a8c256" stroke-width="2" opacity="0.6" />
+                        <line x1="0" y1="100" x2="400" y2="100" stroke="#a8c256" stroke-width="3" /> <line x1="150" y1="125" x2="250" y2="125" stroke="#a8c256" stroke-width="2" opacity="0.6" />
+                        <line x1="100" y1="150" x2="300" y2="150" stroke="#a8c256" stroke-width="2" opacity="0.6" />
+                        <text x="310" y="154" fill="#a8c256" font-family="Share Tech Mono" font-size="14" opacity="0.8">10</text>
+                    </svg>
+                </div>
+                <svg class="ahrs-crosshair" viewBox="0 0 200 50">
+                    <path d="M30,25 L80,25 L80,35 L30,35 Z" fill="#0d1f19" stroke="#a8c256" stroke-width="2"/>
+                    <rect x="95" y="20" width="10" height="10" fill="#0d1f19" stroke="#a8c256" stroke-width="2"/>
+                    <path d="M120,25 L170,25 L170,35 L120,35 Z" fill="#0d1f19" stroke="#a8c256" stroke-width="2"/>
+                </svg>
             </div>
-            <div class="info-stats">
-                <div class="info-stat">
-                    <div class="info-stat-value" id="ac-alt"></div>
-                    <div class="info-stat-label">ALTITUDE</div>
+            
+            <div class="pfd-data-overlay">
+                <div class="pfd-callsign-box">
+                    <div class="info-title" id="ac-callsign"></div>
+                    <div class="info-subtitle" id="ac-type"></div>
+                    <div class="info-reg" id="ac-reg"></div>
                 </div>
-                <div class="info-stat">
-                    <div class="info-stat-value" id="ac-spd"></div>
-                    <div class="info-stat-label">SPEED</div>
+                <div class="pfd-heading-box">
+                    <div><span class="hdg-label"></span><span class="hdg-value" id="ac-hdg-text">000°</span></div>
                 </div>
-                <div class="info-stat">
-                    <div class="info-stat-value" id="ac-stat"></div>
-                    <div class="info-stat-label">STATUS</div>
+            </div>
+
+            <div class="info-stats-container">
+                <div class="info-stats">
+                    <div class="info-stat">
+                        <div class="info-stat-value" id="ac-alt"></div>
+                        <div class="info-stat-label">ALTITUDE</div>
+                    </div>
+                    <div class="info-stat">
+                        <div class="info-stat-value" id="ac-spd"></div>
+                        <div class="info-stat-label">GND SPEED</div>
+                    </div>
+                    <div class="info-stat">
+                        <div class="info-stat-value" id="ac-stat"></div>
+                        <div class="info-stat-label">FLIGHT PHASE</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="vessel-info" style="display: none;">
-            <div class="info-header">
-                <div class="info-title" id="vs-name"></div>
-                <div class="info-subtitle" id="vs-type"></div>
+        <div id="vessel-info" style="display: none; padding: 20px; background: var(--g-bg-4); color: var(--g-text-main);">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid var(--g-bg-2); padding-bottom: 14px;">
+                <div class="info-title" id="vs-name" style="font-size: 20px; background:none; border:none;"></div>
+                <div class="info-subtitle" id="vs-type" style="color: var(--g-text-muted); background:none; border:none;"></div>
             </div>
-            <div class="info-stats">
-                <div class="info-stat">
+            <div class="info-stats" style="background: transparent; border: none;">
+                <div class="info-stat" style="border-color: var(--g-bg-2);">
                     <div class="info-stat-value" id="vs-spd"></div>
                     <div class="info-stat-label">SPEED</div>
                 </div>
-                <div class="info-stat">
+                <div class="info-stat" style="border-color: var(--g-bg-2);">
                     <div class="info-stat-value" id="vs-hdg"></div>
                     <div class="info-stat-label">HEADING</div>
                 </div>
-                <div class="info-stat">
-                    <div class="info-stat-value" id="vs-dest"></div>
+                <div class="info-stat" style="border: none;">
+                    <div class="info-stat-value" id="vs-dest" style="font-size:14px; padding-top:4px;"></div>
                     <div class="info-stat-label">DESTINATION</div>
                 </div>
             </div>
         </div>
 
-        <div id="incident-info" style="display: none;">
-            <div class="info-header">
-                <div class="info-title" id="inc-type"></div>
-                <div class="info-subtitle" id="inc-addr"></div>
+        <div id="incident-info" style="display: none; padding: 20px; background: var(--g-bg-4);">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid var(--g-bg-2); padding-bottom: 14px;">
+                <div class="info-title" id="inc-type" style="font-size: 20px; background:none; border:none;"></div>
+                <div class="info-subtitle" id="inc-addr" style="color: var(--g-accent-2); background:none; border:none;"></div>
             </div>
-            <div class="info-stats-2col">
-                <div class="info-stat">
-                    <div class="info-stat-value" id="inc-id"></div>
-                    <div class="info-stat-label">ID</div>
+            <div class="info-stats" style="background: transparent; border: none;">
+                <div class="info-stat" style="border-color: var(--g-bg-2);">
+                    <div class="info-stat-value" id="inc-id" style="font-size:18px;"></div>
+                    <div class="info-stat-label">INCIDENT ID</div>
                 </div>
-                <div class="info-stat">
-                    <div class="info-stat-value" id="inc-time"></div>
-                    <div class="info-stat-label">TIME</div>
+                <div class="info-stat" style="border-color: var(--g-bg-2);">
+                    <div class="info-stat-value" id="inc-time" style="font-size:18px;"></div>
+                    <div class="info-stat-label">TIME REPORTED</div>
                 </div>
+                <div class="info-stat" style="border: none;"></div>
             </div>
         </div>
     </div>
 
     <div id="audio-control" class="audio-control">
-        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
         <span class="audio-text" id="audio-text">ATC OFFLINE</span>
-    </div>
-
-    <div class="connection-status">
-        <div class="status-indicator connecting" id="status-indicator"></div>
-        <span class="status-text" id="status-text">CONNECTING</span>
     </div>
 
     <audio id="audio" preload="none"></audio>
@@ -389,739 +799,389 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =========================================================================
-        // CONFIGURATION: Customize URLs, Locations, and Colors here.
+        // CONFIGURATION
         // =========================================================================
         const CONFIG = {
             URLS: {
                 MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 RADAR: 'https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
-                SHIPS: 'wss://ports-production-8906.up.railway.app', // WebSocket proxy for AIS data
-                SEATTLE_911: 'https://data.seattle.gov/resource/grwu-wqtk.json', // Only works for Seattle
-                ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50` // Aircraft feed
+                SHIPS: 'wss://ports-production-8906.up.railway.app',
+                SEATTLE_911: 'https://data.seattle.gov/resource/grwu-wqtk.json',
+                ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`
             },
             PATHS: {
                 PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z",
                 SHIP: "M12 4 L8 8 L8 19 L16 19 L16 8 Z"
             },
             LOCATIONS: {
-                JFK: { 
-                    name: 'JFK', lat: 40.6413, lon: -73.7781, zoom: 11, audio: 'https://d.liveatc.net/kjfk9_s', 
-                    bbox: [[40.4, -74.3], [40.9, -73.7]] // Ship Bounding Box
-                },
-                SEA: { 
-                    name: 'SEA', lat: 47.4502, lon: -122.3088, viewLat: 47.6062, viewLon: -122.3321,
-                    zoom: 10, audio: 'https://d.liveatc.net/ksea3_gnd', 
-                    bbox: [[47.4, -122.5], [47.8, -122.2]] 
-                },
-                DC: { 
-                    name: 'IAD/DCA', lat: 38.8977, lon: -77.0365, zoom: 10, audio: 'https://d.liveatc.net/kiad1_1', 
-                    bbox: [[38.5, -77.5], [39.2, -76.3]] 
-                },
-				ATL: { 
-                    name: 'ATL', lat: 33.6407, lon: -84.4277, zoom: 11, 
-                    audio: 'https://d.liveatc.net/katl_twr',
-                    bbox: [[33.5, -84.6], [33.8, -84.2]] 
-                },
-                MIA: { 
-                    name: 'MIA', lat: 25.7959, lon: -80.2870, zoom: 11, audio: 'https://d.liveatc.net/kmia3_gnd', 
-                    bbox: [[25.7, -80.3], [25.9, -80.1]] 
-                },
-                DEN: { 
-                    name: 'DEN', lat: 39.8561, lon: -104.6737, zoom: 11, audio: 'https://d.liveatc.net/kden1_6', 
-                    bbox: [[39.8, -104.8], [40.0, -104.5]] // Landlocked, small BBox
-                },
-                ORD: { 
-                    name: 'ORD', lat: 41.9742, lon: -87.9073, zoom: 11, audio: 'https://d.liveatc.net/kord1n2_app_133625', 
-                    bbox: [[41.8, -87.6], [42.0, -87.5]] // Near Lake Michigan
-                },
-                LAX: { 
-                    name: 'LAX', lat: 33.9416, lon: -118.4085, zoom: 11, audio: 'https://d.liveatc.net/klax4', 
-                    bbox: [[33.7, -118.5], [34.0, -118.3]] // Near Port of LA
-                }
+                JFK: { name: 'JFK', lat: 40.6413, lon: -73.7781, zoom: 11, audio: 'https://d.liveatc.net/kjfk9_s', bbox: [[40.4, -74.3], [40.9, -73.7]] },
+                SEA: { name: 'SEA', lat: 47.4502, lon: -122.3088, viewLat: 47.6062, viewLon: -122.3321, zoom: 10, audio: 'https://d.liveatc.net/ksea3_gnd', bbox: [[47.4, -122.5], [47.8, -122.2]] },
+                DC: { name: 'IAD/DCA', lat: 38.8977, lon: -77.0365, zoom: 10, audio: 'https://d.liveatc.net/kiad1_1', bbox: [[38.5, -77.5], [39.2, -76.3]] },
+				ATL: { name: 'ATL', lat: 33.6407, lon: -84.4277, zoom: 11, audio: 'https://d.liveatc.net/katl_twr', bbox: [[33.5, -84.6], [33.8, -84.2]] },
+                MIA: { name: 'MIA', lat: 25.7959, lon: -80.2870, zoom: 11, audio: 'https://d.liveatc.net/kmia3_gnd', bbox: [[25.7, -80.3], [25.9, -80.1]] },
+                DEN: { name: 'DEN', lat: 39.8561, lon: -104.6737, zoom: 11, audio: 'https://d.liveatc.net/kden1_6', bbox: [[39.8, -104.8], [40.0, -104.5]] },
+                ORD: { name: 'ORD', lat: 41.9742, lon: -87.9073, zoom: 11, audio: 'https://d.liveatc.net/kord1n2_app_133625', bbox: [[41.8, -87.6], [42.0, -87.5]] },
+                LAX: { name: 'LAX', lat: 33.9416, lon: -118.4085, zoom: 11, audio: 'https://d.liveatc.net/klax4', bbox: [[33.7, -118.5], [34.0, -118.3]] }
             },
+            // Updated Colors for Green Palette
             COLORS: {
-                COMM: '#00d9ff',    // Commercial Aircraft (Blue)
-                GA: '#00ff88',      // General Aviation (Light Green)
-                MIL: '#ff0064',     // Military (Hot Pink/Red)
-                HELI: '#ffa500',    // Helicopters (Orange)
-                OTHER: 'rgba(255, 255, 255, 0.3)', // Default/Unknown
-                TUG: '#a855f7', 
-                PILOT: '#ec4899'
+                COMM: '#a8c256', // Primary Accent
+                GA: '#6b9b37',   // Secondary Green
+                MIL: '#f1f8e9',  // White (Pop out)
+                HELI: '#8ba876', // Tertiary Green
+                OTHER: '#3d5e4a', // Dark Green
+                TUG: '#4a7c59',
+                PILOT: '#4a7c59',
+                SHIP: '#4a7c59'
             }
         };
 
-        // =========================================================================
-        // GLOBAL STATE & LAYERS
-        // =========================================================================
+        // --- DATA DICTIONARY ---
+        const AIRCRAFT_TYPES = {
+            "B737": "Boeing 737-700", "B738": "Boeing 737-800", "B739": "Boeing 737-900", "B38M": "Boeing 737 MAX 8", "B39M": "Boeing 737 MAX 9",
+            "B772": "Boeing 777-200", "B77W": "Boeing 777-300ER", "B788": "Boeing 787-8", "B789": "Boeing 787-9", "B744": "Boeing 747-400",
+            "A319": "Airbus A319", "A320": "Airbus A320", "A20N": "Airbus A320neo", "A321": "Airbus A321", "A21N": "Airbus A321neo",
+            "A332": "Airbus A330-200", "A333": "Airbus A330-300", "A359": "Airbus A350-900", "A388": "Airbus A380",
+            "E170": "Embraer 170", "E175": "Embraer 175", "E190": "Embraer 190", "CRJ2": "CRJ-200", "CRJ7": "CRJ-700", "CRJ9": "CRJ-900",
+            "C172": "Cessna 172", "SR22": "Cirrus SR22", "PC12": "Pilatus PC-12", "C208": "Cessna Caravan"
+        };
+
+        // STATE
         const state = {
-            location: 'JFK',
-            map: null,
-            isRadarOn: true,       // <--- MODIFICATION 1: Set default state to true
-            selectedItem: null, 
-            isFollowing: false,
-            socket: null,
-            reconnectTimer: null,
-            audioElement: document.getElementById('audio')
+            location: 'JFK', map: null, isRadarOn: true, selectedItem: null, isFollowing: false,
+            socket: null, reconnectTimer: null, audioElement: document.getElementById('audio')
         };
-
         const layers = {
-            base: null,
-            radar: null,
-            planes: { 
-                markers: new Map(), // L.Marker objects
-                trails: new Map(),  // Array of historic coordinates
-                lines: new Map(),   // L.Polyline objects for trails
-                data: new Map()     // Raw JSON data
-            },
-            vessels: { 
-                markers: new Map(), 
-                trails: new Map(), 
-                lines: new Map(), 
-                data: new Map() 
-            },
-            incidents: { 
-                markers: new Map(), 
-                data: new Map() 
-            },
-            overlays: [] // Stores airport markers (for DC/SEA)
+            base: null, radar: null,
+            planes: { markers: new Map(), trails: new Map(), lines: new Map(), data: new Map() },
+            vessels: { markers: new Map(), trails: new Map(), lines: new Map(), data: new Map() },
+            incidents: { markers: new Map(), data: new Map() }, overlays: [], reticle: null
         };
 
-        // =========================================================================
-        // INITIALIZATION & MAP SETUP
-        // =========================================================================
         function init() {
-            // Set initial UI state and map view
-            document.getElementById('location-selector').value = state.location;
-            updateLocationTitle();
-
-            initMap();
-            
-            // MODIFICATION 3: Call initialization function after map is ready
-            if (state.isRadarOn) {
-                initializeRadarOn();
-            }
-
-            startTracking();
-            setupEventListeners();
-            
-            // Start the clock and audio
-            updateClock();
-            setInterval(updateClock, 1000);
-			autoStartAudio();
-        }
+    // Line deleted here
+    updateLocationTitle();
+    initMap();
+    if(state.isRadarOn) initializeRadarOn();
+    startTracking();
+    setupEventListeners();
+    updateClock(); setInterval(updateClock, 1000);
+    autoStartAudio();
+    setupCustomDropdown();
+}
 
         function initMap() {
             const loc = CONFIG.LOCATIONS[state.location];
-            
-            // Use viewLat/Lon if available for a better initial view
-            const centerLat = loc.viewLat || loc.lat;
-            const centerLon = loc.viewLon || loc.lon;
-
-            state.map = L.map('map', {
-                center: [centerLat, centerLon],
-                zoom: loc.zoom,
-                zoomControl: false, // Use custom zoom control placement
-                attributionControl: true
-            });
-            
-            // Add base map tiles (OpenStreetMap)
-            layers.base = L.tileLayer(CONFIG.URLS.MAP, {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19,
-                className: 'map-tiles'
-            }).addTo(state.map);
-            
-            // Define radar layer but don't add it yet in initMap
-            layers.radar = L.tileLayer(CONFIG.URLS.RADAR, { 
-                opacity: 0.6,
-                attribution: 'Weather © IEM',
-                zIndex: 500,
-                className: 'radar-tiles'
-            });
-
+            state.map = L.map('map', { center: [loc.viewLat||loc.lat, loc.viewLon||loc.lon], zoom: loc.zoom, zoomControl: false, attributionControl: false });
+            layers.base = L.tileLayer(CONFIG.URLS.MAP, { attribution: '© OpenStreetMap', maxZoom: 19, className: 'map-tiles' }).addTo(state.map);
+            layers.radar = L.tileLayer(CONFIG.URLS.RADAR, { opacity: 0.5, zIndex: 500, className: 'radar-tiles' });
             updateLocationMarker();
             L.control.zoom({ position: 'bottomright' }).addTo(state.map);
         }
-
-        // MODIFICATION 2: New function to force radar on
-        function initializeRadarOn() {
-            layers.radar.addTo(state.map); 
-            const btn = document.getElementById('radar-control');
-            btn.classList.add('active');
-            btn.textContent = "RADAR: ON";
-        }
-
+        function initializeRadarOn() { layers.radar.addTo(state.map); document.getElementById('radar-control').classList.add('active'); }
 
         function setupEventListeners() {
     document.getElementById('audio-control').addEventListener('click', toggleAudio);
     document.getElementById('radar-control').addEventListener('click', toggleRadar);
-    document.getElementById('location-selector').addEventListener('change', (e) => changeLocation(e.target.value));
+    // Line deleted here
     
-    // Handle map clicks
+    document.getElementById('recenter-btn').addEventListener('click', recenterView);
+    
     state.map.on('click', (e) => {
-        // 1. Ignore clicks on markers (let the marker's own handler work)
         if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
-        
-        // 2. Capture the state BEFORE we hide the box
         const wasFollowing = state.isFollowing || state.selectedItem;
-
-        // 3. Now hide the box (which clears state.isFollowing)
         hideInfoBox();
-        
-        // 4. Use the CAPTURED variable to decide if we recenter
-        if (wasFollowing) {
-            recenterView();
-        }
-
-        // 5. AUDIO FIX: Attempt to unlock audio on this interaction
-        // (Browsers block autoplay; this forces it on the first map interaction)
+        if (wasFollowing) recenterView();
         if (state.audioElement.paused) {
             state.audioElement.muted = false;
-            state.audioElement.play()
-                .then(() => {
-                    document.getElementById('audio-control').classList.add('playing');
-                    document.getElementById('audio-text').textContent = 'ATC LIVE';
-                })
-                .catch((err) => { /* console.log('Audio waiting for interaction'); */ });
+            state.audioElement.play().then(()=>{ 
+                document.getElementById('audio-control').classList.add('playing'); 
+                document.getElementById('audio-text').textContent='ATC LIVE'; 
+            }).catch(()=>{});
         }
     });
 }
 
-        // =========================================================================
-        // LOCATION AND UI CONTROL
-        // =========================================================================
-        function changeLocation(code) {
-            state.isFollowing = false;
-            state.location = code;
-            const loc = CONFIG.LOCATIONS[code];
-            
-            updateLocationTitle();
-            
-            // Set map view to the new location's center
-            const centerLat = loc.viewLat || loc.lat;
-            const centerLon = loc.viewLon || loc.lon;
-            state.map.setView([centerLat, centerLon], loc.zoom);
-            
-            updateLocationMarker();
-            
-            // Clean up all existing markers and data from the old location
-            clearMapData();
-            hideInfoBox();
-            
-            // Update audio stream for the new location
-            handleAudioChange(loc.audio);
 
-            // Reconnect ship stream for the new location's bounding box
-            if (state.socket && state.socket.readyState === WebSocket.OPEN) {
-                subscribeToShips();
-            }
+function setupCustomDropdown() {
+    const wrapper = document.querySelector('.custom-select-wrapper');
+    const select = wrapper.querySelector('.custom-select');
+    const trigger = wrapper.querySelector('.custom-select__trigger');
+    const options = wrapper.querySelectorAll('.custom-option');
+    const selectedText = document.getElementById('selected-text');
+
+    // Toggle Menu
+    trigger.addEventListener('click', (e) => {
+        select.classList.toggle('open');
+        e.stopPropagation(); // Prevent immediate close
+    });
+
+    // Handle Selection
+    options.forEach(option => {
+        option.addEventListener('click', function() {
+            // Visual update
+            wrapper.querySelector('.custom-option.selected').classList.remove('selected');
+            this.classList.add('selected');
+            selectedText.textContent = this.textContent;
             
-            // If radar was on globally, keep it on for the new location
-            if (state.isRadarOn) {
-                layers.radar.addTo(state.map);
-            }
+            // Close menu
+            select.classList.remove('open');
             
-            // Fetch incidents for the new location (will only show data for SEA)
+            // TRIGGER THE ACTUAL MAP CHANGE
+            const value = this.getAttribute('data-value');
+            changeLocation(value); 
+        });
+    });
+
+    // Close menu when clicking outside
+    window.addEventListener('click', (e) => {
+        if (!select.contains(e.target)) {
+            select.classList.remove('open');
+        }
+    });
+}
+
+
+        function recenterView() {
+            state.isFollowing = false; 
+            state.selectedItem = null; 
+            const loc = CONFIG.LOCATIONS[state.location];
+            state.map.setView([loc.viewLat||loc.lat, loc.viewLon||loc.lon], loc.zoom);
+            hideInfoBox();
+        }
+
+        function changeLocation(code) {
+            state.isFollowing = false; state.location = code;
+            const loc = CONFIG.LOCATIONS[code];
+            updateLocationTitle();
+            state.map.setView([loc.viewLat||loc.lat, loc.viewLon||loc.lon], loc.zoom);
+            updateLocationMarker(); clearMapData(); hideInfoBox();
+            handleAudioChange(loc.audio);
+            if(state.socket?.readyState===WebSocket.OPEN) subscribeToShips();
+            if(state.isRadarOn) layers.radar.addTo(state.map);
             fetchFireIncidents();
         }
-
         function updateLocationMarker() {
-            // Remove previous airport/location markers
-            layers.overlays.forEach(l => state.map.removeLayer(l));
-            layers.overlays = [];
-
-            if (state.location !== 'DC') {
-                // Standard single marker
-                const loc = CONFIG.LOCATIONS[state.location];
-                const icon = createLocationIcon(loc.name);
-                layers.overlays.push(L.marker([loc.lat, loc.lon], { icon }).addTo(state.map));
+            layers.overlays.forEach(l=>state.map.removeLayer(l)); layers.overlays=[];
+            if(state.location!=='DC') {
+                layers.overlays.push(L.marker([CONFIG.LOCATIONS[state.location].lat, CONFIG.LOCATIONS[state.location].lon], {icon:createLocationIcon(CONFIG.LOCATIONS[state.location].name)}).addTo(state.map));
             } else {
-                // DC Special Logic: Show markers for both IAD and DCA
-                addDCOverlays();
+                layers.overlays.push(L.marker([38.9531, -77.4565], {icon:createLocationIcon('IAD')}).addTo(state.map));
+                layers.overlays.push(L.marker([38.8521, -77.0377], {icon:createLocationIcon('DCA')}).addTo(state.map));
             }
         }
-
-        function addDCOverlays() {
-            layers.overlays.push(L.marker([38.9531, -77.4565], { icon: createLocationIcon('IAD') }).addTo(state.map));
-            layers.overlays.push(L.marker([38.8521, -77.0377], { icon: createLocationIcon('DCA') }).addTo(state.map));
-        }
-        
         function clearMapData() {
-            // Centralized function to clear all markers, polyline layers, and data maps
-            const clearSet = (set) => {
-                set.markers.forEach(m => state.map.removeLayer(m));
-                set.markers.clear();
-                
-                if (set.lines) {
-                    set.lines.forEach(l => state.map.removeLayer(l));
-                    set.lines.clear();
-                }
-                
-                if (set.trails) {
-                    set.trails.clear();
-                }
-                
-                set.data.clear();
-            };
-
-            clearSet(layers.planes);
-            clearSet(layers.vessels);
-            clearSet(layers.incidents);
-            
+            ['planes','vessels','incidents'].forEach(k=>{
+                layers[k].markers.forEach(m=>state.map.removeLayer(m));
+                layers[k].markers.clear();
+                if(layers[k].lines){ layers[k].lines.forEach(l=>state.map.removeLayer(l)); layers[k].lines.clear(); }
+                if(layers[k].trails) layers[k].trails.clear();
+                layers[k].data.clear();
+            });
+            if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
             updateStats();
         }
 
-        function recenterView() {
-            const loc = CONFIG.LOCATIONS[state.location];
-            // Use viewLat/Lon if available
-            const centerLat = loc.viewLat || loc.lat;
-            const centerLon = loc.viewLon || loc.lon;
-            
-            // Smoothly fly back to the default view for the current location
-            state.map.flyTo([centerLat, centerLon], loc.zoom, { duration: 1 });
-            hideInfoBox();
-        }
-
-        // =========================================================================
-        // DATA FETCHING: AIRCRAFT (ADSB - POLLING)
-        // =========================================================================
+        // FETCH AIRCRAFT
         async function fetchPlanes() {
             try {
-                const loc = CONFIG.LOCATIONS[state.location];
-                // Fetch aircraft data centered on the city location
-                const res = await fetch(CONFIG.URLS.ADSB(loc.lat, loc.lon));
+                const l = CONFIG.LOCATIONS[state.location];
+                const res = await fetch(CONFIG.URLS.ADSB(l.lat, l.lon));
                 const data = await res.json();
-                
-                if (!data.ac) return;
-                
-                const activeHexes = new Set();
-                
+                if(!data.ac) return;
+                const active = new Set();
                 data.ac.forEach(ac => {
-                    // Basic data validation: skip if no location or if aircraft is on the ground
-                    if (!ac.lat || !ac.lon || ac.alt_baro < 100) return;
+                    if(!ac.lat || !ac.lon) return;
+                    active.add(ac.hex);
                     
-                    activeHexes.add(ac.hex);
+                    // Physics
+                    const old = layers.planes.data.get(ac.hex);
+                    let bank=0; if(old && old.track!==undefined && ac.track!==undefined) {
+                        let d = ac.track - old.track; if(d>180)d-=360; if(d<-180)d+=360;
+                        bank = Math.max(-45, Math.min(45, d*2.5));
+                    }
+                    ac.pseudoBank = bank;
+                    
+                    let pitch=0; const gs = ac.gs||0; const vs = ac.baro_rate||0;
+                    if(gs>30) pitch = Math.max(-20, Math.min(20, Math.atan((vs/101.3)/gs)*(180/Math.PI)));
+                    ac.pseudoPitch = pitch;
+                    
                     layers.planes.data.set(ac.hex, ac);
                     
-                    // Trail management
-                    if (!layers.planes.trails.has(ac.hex)) {
-                        layers.planes.trails.set(ac.hex, []);
-                    }
-                    const trail = layers.planes.trails.get(ac.hex);
-                    trail.push([ac.lat, ac.lon]);
-                    if (trail.length > 200) trail.shift(); // Max trail length: 200 points
+                    // Trail
+                    if(!layers.planes.trails.has(ac.hex)) layers.planes.trails.set(ac.hex,[]);
+                    const t = layers.planes.trails.get(ac.hex); t.push([ac.lat,ac.lon]); if(t.length>100)t.shift();
 
-                    updatePlaneMarker(ac, trail);
-                });
-
-                // Cleanup: Remove markers for planes no longer in the feed (flew away)
-                layers.planes.markers.forEach((_, hex) => {
-                    if (!activeHexes.has(hex)) {
-                        state.map.removeLayer(layers.planes.markers.get(hex));
-                        layers.planes.markers.delete(hex);
-                        
-                        if (layers.planes.lines.has(hex)) {
-                            state.map.removeLayer(layers.planes.lines.get(hex));
-                            layers.planes.lines.delete(hex);
-                        }
-                        layers.planes.trails.delete(hex);
+                    updatePlaneMarker(ac, t);
+                    if(state.selectedItem===ac.hex && state.isFollowing) {
+                        updateAHRSDisplay(ac); showInfo('plane', ac);
                     }
                 });
-                
+                layers.planes.markers.forEach((_,h)=>{
+                    if(!active.has(h)) {
+                        state.map.removeLayer(layers.planes.markers.get(h)); layers.planes.markers.delete(h);
+                        if(layers.planes.lines.has(h)) { state.map.removeLayer(layers.planes.lines.get(h)); layers.planes.lines.delete(h); }
+                        layers.planes.trails.delete(h);
+                    }
+                });
                 updateStats();
-            } catch (e) {
-                console.error("ADSB Fetch Error", e);
-            }
+            } catch(e){}
         }
-
         function updatePlaneMarker(ac, trail) {
-            // Pan map if this aircraft is the selected item
-            if (ac.hex === state.selectedItem && state.isFollowing) {
-                state.map.panTo([ac.lat, ac.lon]);
+            if(state.selectedItem===ac.hex && state.isFollowing) {
+                state.map.panTo([ac.lat,ac.lon]);
+                if(layers.reticle) layers.reticle.setLatLng([ac.lat,ac.lon]);
             }
-
-            // Determine aircraft type and color based on category code
-            let color = CONFIG.COLORS.OTHER;
-            let type = 'other';
+            let col=CONFIG.COLORS.OTHER, type='other';
+            if(ac.category==='A7'){type='heli';col=CONFIG.COLORS.HELI;}
+            else if(['A3','A4','A5'].includes(ac.category)){type='comm';col=CONFIG.COLORS.COMM;}
+            else if(['A1','A2'].includes(ac.category)){type='ga';col=CONFIG.COLORS.GA;}
+            else if(ac.category==='A6'){type='mil';col=CONFIG.COLORS.MIL;}
             
-            if (ac.category === 'A7') {
-                type = 'heli'; color = CONFIG.COLORS.HELI;
-            } else if (['A3','A4','A5'].includes(ac.category)) {
-                type = 'comm'; color = CONFIG.COLORS.COMM; // Commercial
-            } else if (['A1','A2'].includes(ac.category)) {
-                type = 'ga'; color = CONFIG.COLORS.GA; // General Aviation
-            } else if (ac.category === 'A6') {
-                type = 'mil'; color = CONFIG.COLORS.MIL; // Military/Other special
-            }
-
-            const icon = createHudIcon(type, ac.track || 0, color, ac.category === 'A7');
-            
-            // Update or create the Leaflet marker
-            if (layers.planes.markers.has(ac.hex)) {
-                layers.planes.markers.get(ac.hex).setLatLng([ac.lat, ac.lon]).setIcon(icon);
-            } else {
-                const m = L.marker([ac.lat, ac.lon], { icon }).addTo(state.map);
-                m.on('click', () => showInfo('plane', layers.planes.data.get(ac.hex)));
+            const icon = createHudIcon(type, ac.track||0, col, type==='heli');
+            if(layers.planes.markers.has(ac.hex)) layers.planes.markers.get(ac.hex).setLatLng([ac.lat,ac.lon]).setIcon(icon);
+            else {
+                const m = L.marker([ac.lat,ac.lon],{icon}).addTo(state.map);
+                m.on('click', ()=>{
+                    const d=layers.planes.data.get(ac.hex);
+                    showInfo('plane', d); createReticle(d.lat,d.lon);
+                });
                 layers.planes.markers.set(ac.hex, m);
             }
-
-            // Update the polyline trail
-            updateTrailLine(layers.planes.lines, ac.hex, trail, color);
+            updateTrailLine(layers.planes.lines, ac.hex, trail, col);
         }
 
-        // =========================================================================
-        // DATA FETCHING: SHIPS (AIS - WEBSOCKET)
-        // =========================================================================
+        // RETICLE
+        function createReticle(lat, lon) {
+            if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
+            const icon = L.divIcon({className:'target-reticle-icon', html:'<div class="reticle-ring"></div>', iconSize:[60,60], iconAnchor:[30,30]});
+            layers.reticle = L.marker([lat,lon],{icon, zIndexOffset:1000}).addTo(state.map);
+        }
+
+        // WEBSOCKET & OTHERS
         function connectWebSocket() {
-            updateConnection('connecting');
             state.socket = new WebSocket(CONFIG.URLS.SHIPS);
-            
-            state.socket.onopen = () => {
-                console.log('WS Connected');
-                updateConnection('connected');
-                setTimeout(subscribeToShips, 2000); // Subscribe after brief delay
-            };
-            
-            state.socket.onmessage = (e) => {
-                try {
-                    const d = JSON.parse(e.data);
-                    // Standard message handler
-                    if (d.type !== 'status') {
-                        processAIS(d);
-                    }
-                } catch(err) {}
-            };
-            
-            state.socket.onclose = () => {
-                updateConnection('disconnected');
-                // Auto-reconnect after 5 seconds
-                if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
-                state.reconnectTimer = setTimeout(connectWebSocket, 5000);
-            };
+            state.socket.onopen = () => { setTimeout(subscribeToShips,2000); };
+            state.socket.onmessage = (e) => { try{ const d=JSON.parse(e.data); if(d.type!=='status') processAIS(d); }catch(err){} };
+            state.socket.onclose = () => { setTimeout(connectWebSocket,5000); };
         }
-
-        function subscribeToShips() {
-            // Send the bounding box request to the WebSocket server
-            if (state.socket?.readyState === WebSocket.OPEN) {
-                state.socket.send(JSON.stringify({
-                    action: 'subscribe',
-                    BoundingBoxes: [CONFIG.LOCATIONS[state.location].bbox]
-                }));
-                console.log(`WS Subscribed to BBox for ${state.location}`);
-            }
-        }
-
+        function subscribeToShips() { if(state.socket?.readyState===WebSocket.OPEN) state.socket.send(JSON.stringify({action:'subscribe', BoundingBoxes:[CONFIG.LOCATIONS[state.location].bbox]})); }
         function processAIS(d) {
-            const metadata = d.MetaData;
-            if (!metadata?.MMSI) return;
-            
-            const mmsi = metadata.MMSI;
-            let vessel = layers.vessels.data.get(mmsi) || {
-                mmsi: mmsi,
-                name: metadata.ShipName || `MMSI ${mmsi}`,
-                typeInt: 0, speed: 0, heading: 0, lat: null, lon: null
-            };
-
-            // Update position data
-            if (d.MessageType === 'PositionReport' && metadata.latitude) {
-                vessel.lat = metadata.latitude;
-                vessel.lon = metadata.longitude;
-                vessel.speed = d.Message.PositionReport.Sog || 0;
-                vessel.heading = d.Message.PositionReport.TrueHeading || 0;
-                
-                if (vessel.speed < 0.1) return; // Filter stationary ships for cleaner map
-            // Update static data (name, type, destination)
-            } else if (d.MessageType === 'ShipStaticData') {
-                vessel.name = d.Message.ShipStaticData.Name || vessel.name;
-                vessel.typeInt = d.Message.ShipStaticData.Type;
-                vessel.dest = d.Message.ShipStaticData.Destination;
+            const m=d.MetaData; if(!m?.MMSI) return;
+            let v = layers.vessels.data.get(m.MMSI)||{mmsi:m.MMSI, name:m.ShipName||m.MMSI, type:0, speed:0, lat:null, lon:null};
+            if(d.MessageType==='PositionReport' && m.latitude) { v.lat=m.latitude; v.lon=m.longitude; v.speed=d.Message.PositionReport.Sog||0; v.heading=d.Message.PositionReport.TrueHeading||0; if(v.speed<0.1) return; }
+            else if(d.MessageType==='ShipStaticData') { v.name=d.Message.ShipStaticData.Name; v.type=d.Message.ShipStaticData.Type; v.dest=d.Message.ShipStaticData.Destination; }
+            layers.vessels.data.set(m.MMSI, v);
+            if(v.lat) {
+                if(!layers.vessels.trails.has(m.MMSI)) layers.vessels.trails.set(m.MMSI,[]);
+                const t=layers.vessels.trails.get(m.MMSI); t.push([v.lat,v.lon]); if(t.length>100)t.shift();
+                // Use Ship Color
+                let col=CONFIG.COLORS.SHIP; 
+                const icon=createHudIcon('ship', v.heading, col, false, CONFIG.PATHS.SHIP);
+                if(layers.vessels.markers.has(m.MMSI)) layers.vessels.markers.get(m.MMSI).setLatLng([v.lat,v.lon]).setIcon(icon);
+                else { const mk=L.marker([v.lat,v.lon],{icon}).addTo(state.map); mk.on('click', ()=>showInfo('vessel',layers.vessels.data.get(m.MMSI))); layers.vessels.markers.set(m.MMSI,mk); }
+                updateTrailLine(layers.vessels.lines, m.MMSI, t, col);
             }
-
-            layers.vessels.data.set(mmsi, vessel);
-
-            if (vessel.lat) {
-                if (!layers.vessels.trails.has(mmsi)) { layers.vessels.trails.set(mmsi, []); }
-                
-                const trail = layers.vessels.trails.get(mmsi);
-                trail.push([vessel.lat, vessel.lon]);
-                if (trail.length > 100) trail.shift();
-                
-                updateVesselMarker(vessel, trail);
-                updateStats();
-            }
+            updateStats();
         }
-
-        function updateVesselMarker(vessel, trail) {
-            if (vessel.mmsi === state.selectedItem && state.isFollowing) {
-                state.map.panTo([vessel.lat, vessel.lon]);
-            }
-            
-            // Determine ship color/type
-            let color = CONFIG.COLORS.OTHER;
-            if (vessel.typeInt >= 70 && vessel.typeInt <= 79) color = CONFIG.COLORS.COMM;
-            else if (vessel.typeInt >= 80) color = CONFIG.COLORS.MIL;
-            else if (vessel.typeInt >= 60 && vessel.typeInt <= 69) color = CONFIG.COLORS.GA;
-            
-            const icon = createHudIcon('ship', vessel.heading, color, false, CONFIG.PATHS.SHIP);
-
-            // Update or create the Leaflet marker
-            if (layers.vessels.markers.has(vessel.mmsi)) {
-                layers.vessels.markers.get(vessel.mmsi).setLatLng([vessel.lat, vessel.lon]).setIcon(icon);
-            } else {
-                const m = L.marker([vessel.lat, vessel.lon], { icon }).addTo(state.map);
-                m.on('click', () => showInfo('vessel', layers.vessels.data.get(vessel.mmsi)));
-                layers.vessels.markers.set(vessel.mmsi, m);
-            }
-            
-            updateTrailLine(layers.vessels.lines, vessel.mmsi, trail, color);
-        }
-
-        // =========================================================================
-        // DATA FETCHING: INCIDENTS (SEATTLE ONLY - POLLING)
-        // =========================================================================
         async function fetchFireIncidents() {
-            // Note: This API is specific to Seattle. It will return zero incidents for other locations.
-            if (state.location !== 'SEA') {
-                updateStats();
-                return;
-            }
-            
+            if(state.location!=='SEA') { updateStats(); return; }
             try {
-                // Query incidents from the last 10 hours
-                const time = new Date(Date.now() - 36000000).toISOString().split('.')[0];
-                const res = await fetch(`${CONFIG.URLS.SEATTLE_911}?$where=datetime>'${time}'`);
-                
-                if (!res.ok) throw new Error("Failed to fetch 911 data");
-                const data = await res.json();
-                
-                data.forEach(inc => {
-                    if (!inc.latitude) return;
-                    
-                    layers.incidents.data.set(inc.incident_number, inc);
-                    
-                    if (!layers.incidents.markers.has(inc.incident_number)) {
-                        // Use emoji for icon
-                        const icon = L.divIcon({ 
-                            className: 'marker-icon incident-marker', 
-                            html: '🔥', 
-                            iconSize: [24,24], 
-                            iconAnchor: [12,12] 
-                        });
-                        
-                        const m = L.marker([inc.latitude, inc.longitude], { icon }).addTo(state.map);
-                        m.on('click', () => showInfo('incident', inc));
-                        layers.incidents.markers.set(inc.incident_number, m);
+                const t=new Date(Date.now()-36000000).toISOString().split('.')[0];
+                const res=await fetch(`${CONFIG.URLS.SEATTLE_911}?$where=datetime>'${t}'`); const data=await res.json();
+                data.forEach(inc=>{
+                    if(!inc.latitude) return; layers.incidents.data.set(inc.incident_number,inc);
+                    if(!layers.incidents.markers.has(inc.incident_number)) {
+                        const icon=L.divIcon({className:'marker-icon incident-marker', html:'<span style="font-size:24px;color:#a8c256;text-shadow:0 0 5px #a8c256">🔥</span>', iconSize:[24,24], iconAnchor:[12,12]});
+                        const m=L.marker([inc.latitude,inc.longitude],{icon}).addTo(state.map); m.on('click', ()=>showInfo('incident',inc)); layers.incidents.markers.set(inc.incident_number,m);
                     }
-                });
-                updateStats();
-            } catch(e) {
-                console.error("Incident fetch error:", e);
-            }
+                }); updateStats();
+            } catch(e){}
         }
 
-        // =========================================================================
-        // UI AND UTILITY FUNCTIONS
-        // =========================================================================
+        // UI & UTILS
+        function createLocationIcon(l) { 
+    return L.divIcon({
+        className:'', 
+        // Added 'width:max-content' to the style below
+        html:`<div style="background:#a8c256; color:#0d1f19; font-weight:700; font-size:10px; padding:2px 6px; border-radius:4px; white-space:nowrap; width:max-content; transform:translate(-50%, -20px); text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.6); border:1px solid #0d1f19;">${l}</div><div style="width:12px; height:12px; background:#a8c256; border:2px solid #0d1f19; border-radius:50%; box-shadow:0 0 5px rgba(168,194,86,0.5);"></div>`, 
+        iconSize:[0,0], 
+        iconAnchor:[6,6]
+    }); 
+}
         
-        function createLocationIcon(label) {
-            // Generates the custom glowing airport icon with text label
-            return L.divIcon({
-                className: '', // Essential to remove Leaflet's default white box
-                html: `<div class="location-marker-wrapper">
-                        <svg class="location-marker-svg" width="36" height="36" viewBox="0 0 36 36">
-                            <circle class="marker-outer-ring" cx="18" cy="18" r="14"/>
-                            <circle class="marker-inner-dot" cx="18" cy="18" r="5"/>
-                        </svg>
-                        <div class="location-marker-label">${label}</div>
-                       </div>`,
-                iconSize: [90, 70],
-                iconAnchor: [45, 35]
-            });
-        }
+        function createHudIcon(t,r,c,h,p=CONFIG.PATHS.PLANE) { const html=h?`<span style="color:${c};transform:rotate(${r}deg);display:inline-block;font-size:24px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">&infin;</span>`:`<svg width="24" height="24" viewBox="0 0 24 24" style="transform:rotate(${r}deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path fill="${c}" d="${p}"/></svg>`; return L.divIcon({className:'marker-icon', html, iconSize:[24,24], iconAnchor:[12,12]}); }
+        function updateTrailLine(m,i,t,c) { if(t.length<2)return; if(m.has(i)) m.get(i).setLatLngs(t).setStyle({color:c, opacity:0.5, weight:2}); else m.set(i, L.polyline(t,{color:c, opacity:0.5, weight:2}).addTo(state.map)); }
 
-        function createHudIcon(type, rotation, color, isHeli, path = CONFIG.PATHS.PLANE) {
-            // Generates the SVG path icon for planes/ships, rotating it by its track/heading
-            const html = isHeli // Helicopters are represented by text symbol
-                ? `<span style="color:${color}; transform: rotate(${rotation}deg); display:inline-block; font-size:24px;">&infin;</span>`
-                : `<svg width="24" height="24" viewBox="0 0 24 24" style="transform: rotate(${rotation}deg); filter: drop-shadow(0 0 1px ${color});"><path fill="${color}" d="${path}"/></svg>`;
-            
-            return L.divIcon({
-                className: 'marker-icon', // Used for CSS transitions
-                html: html,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
-            });
-        }
-
-        function updateTrailLine(lineMap, id, trail, color) {
-            // Updates or creates the polyline trail
-            if (trail.length < 2) return;
-            
-            if (lineMap.has(id)) {
-                lineMap.get(id).setLatLngs(trail).setStyle({ color, opacity: 0.6, weight: 2 });
-            } else {
-                const line = L.polyline(trail, { color, opacity: 0.6, weight: 2 }).addTo(state.map);
-                lineMap.set(id, line);
-            }
-        }
-
-        // --- INFO WINDOW HANDLERS ---
         function showInfo(type, data) {
-            state.selectedItem = data.hex || data.mmsi || data.incident_number;
-            state.isFollowing = true;
+            state.selectedItem = data.hex || data.mmsi || data.incident_number; state.isFollowing = true;
+            ['aircraft-info','vessel-info','incident-info'].forEach(id=>document.getElementById(id).style.display='none');
             
-            // Prepare UI by hiding all sections
-            ['aircraft-info', 'vessel-info', 'incident-info'].forEach(id => document.getElementById(id).style.display = 'none');
-            
-            // Populate and show the correct panel
-            if (type === 'plane') {
-                setText('ac-callsign', data.flight?.trim() || data.hex);
-                setText('ac-type', data.t || 'UNKNOWN');
-                setText('ac-alt', (data.alt_baro||0).toLocaleString() + ' ft');
-                setText('ac-spd', Math.round((data.gs||0)*1.15) + ' mph');
+            if(type==='plane') {
+                document.getElementById('ac-callsign').textContent = data.flight?.trim() || data.hex;
+                const rawType = data.t || 'UNK';
+                document.getElementById('ac-type').textContent = AIRCRAFT_TYPES[rawType] || rawType;
                 
-                const vRate = data.baro_rate || 0;
-                setText('ac-stat', (vRate > 350 ? 'CLIMB' : vRate < -350 ? 'DESC' : 'LEVEL'));
+                document.getElementById('ac-reg').textContent = data.r || ''; 
+                document.getElementById('ac-alt').textContent = (data.alt_baro||0).toLocaleString() + ' ft';
+                document.getElementById('ac-spd').textContent = Math.round((data.gs||0)*1.15) + ' mph';
                 
-                document.getElementById('aircraft-info').style.display = 'block';
-                state.map.flyTo([data.lat, data.lon], 11, { duration: 0.8 });
-            
-            } else if (type === 'vessel') {
-                setText('vs-name', data.name);
-                setText('vs-type', data.typeInt ? 'TYPE ' + data.typeInt : 'VESSEL');
-                setText('vs-spd', data.speed.toFixed(1) + ' kts');
-                setText('vs-hdg', Math.round(data.heading) + '°');
-                setText('vs-dest', data.dest || 'N/A');
+                const vs = data.baro_rate || 0; 
+                const alt = typeof data.alt_baro === 'number' ? data.alt_baro : 0;
+                let status = "CRUISING";
+
+                if(data.alt_baro === "ground") {
+                    status = "TAXI/GND";
+                } else if (vs > 300) {
+                    status = alt < 2000 ? "TAKEOFF" : "CLIMBING";
+                } else if (vs < -300) {
+                    if (alt < 800) status = "LANDING";
+                    else if (alt < 4000) status = "APPROACH";
+                    else status = "DESCENDING";
+                }
+                document.getElementById('ac-stat').textContent = status;
                 
-                document.getElementById('vessel-info').style.display = 'block';
-                state.map.flyTo([data.lat, data.lon], 13, { duration: 0.8 });
-            
-            } else { // Incident
-                setText('inc-type', data.type);
-                setText('inc-addr', data.address);
-                setText('inc-id', data.incident_number);
-                setText('inc-time', new Date(data.datetime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}));
-                
-                document.getElementById('incident-info').style.display = 'block';
-                state.map.flyTo([data.latitude, data.longitude], 15, { duration: 0.8 });
+                updateAHRSDisplay(data);
+                document.getElementById('ahrs-full-display').style.display='block';
+                document.getElementById('aircraft-info').style.display='block';
+                state.map.flyTo([data.lat,data.lon], 11, {duration:0.8});
+            } else if(type==='vessel') {
+                document.getElementById('vs-name').textContent = data.name; document.getElementById('vs-type').textContent = data.type;
+                document.getElementById('vs-spd').textContent = data.speed.toFixed(1)+' kts'; document.getElementById('vs-hdg').textContent = Math.round(data.heading)+'°';
+                document.getElementById('vs-dest').textContent = data.dest||'N/A';
+                document.getElementById('vessel-info').style.display='block'; state.map.flyTo([data.lat,data.lon],13,{duration:0.8});
+            } else {
+                document.getElementById('inc-type').textContent = data.type; document.getElementById('inc-addr').textContent = data.address;
+                document.getElementById('inc-id').textContent = data.incident_number; document.getElementById('inc-time').textContent = new Date(data.datetime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+                document.getElementById('incident-info').style.display='block'; state.map.flyTo([data.latitude,data.longitude],15,{duration:0.8});
             }
-            
             document.getElementById('info-panel').classList.add('visible');
         }
 
+        function updateAHRSDisplay(data) {
+            const bank = data.pseudoBank||0; const pitch = data.pseudoPitch||0;
+            const horizon = document.getElementById('ahrs-horizon');
+            if(horizon) horizon.style.transform = `rotate(${-bank}deg) translateY(${pitch*4}px)`;
+            const hdg = data.track || 0;
+            document.getElementById('ac-hdg-text').textContent = Math.round(hdg).toString().padStart(3,'0') + '°';
+        }
+
         function hideInfoBox() {
-            // Resets state and hides the info panel
-            state.isFollowing = false;
-            state.selectedItem = null;
-            document.getElementById('info-panel').classList.remove('visible');
+            state.isFollowing=false; state.selectedItem=null; document.getElementById('info-panel').classList.remove('visible');
+            if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
         }
+
+        function toggleRadar() { state.isRadarOn=!state.isRadarOn; const b=document.getElementById('radar-control'); if(state.isRadarOn){layers.radar.addTo(state.map);b.classList.add('active');b.textContent='RADAR: ON';}else{layers.radar.remove();b.classList.remove('active');b.textContent='RADAR: OFF';} }
+        function toggleAudio() { if(state.audioElement.paused){state.audioElement.play();document.getElementById('audio-control').classList.add('playing');document.getElementById('audio-text').textContent='ATC LIVE';}else{state.audioElement.pause();document.getElementById('audio-control').classList.remove('playing');document.getElementById('audio-text').textContent='ATC OFFLINE';} }
+        function handleAudioChange(u) { const p=!state.audioElement.paused; state.audioElement.src=u; if(p)state.audioElement.play().catch(()=>{}); else {document.getElementById('audio-control').classList.remove('playing');document.getElementById('audio-text').textContent='ATC OFFLINE';} }
+        function autoStartAudio() { state.audioElement.src=CONFIG.LOCATIONS[state.location].audio; state.audioElement.muted=true; state.audioElement.play().then(()=>{setTimeout(()=>{state.audioElement.muted=false;document.getElementById('audio-text').textContent='ATC LIVE';},500);document.getElementById('audio-control').classList.add('playing');}).catch(()=>{}); }
         
-        // --- AUXILIARY UI HANDLERS ---
-        function toggleRadar() {
-            state.isRadarOn = !state.isRadarOn;
-            const btn = document.getElementById('radar-control');
-            
-            if (state.isRadarOn) {
-                layers.radar.addTo(state.map);
-                btn.classList.add('active');
-                btn.textContent = "RADAR: ON";
-            } else {
-                layers.radar.remove();
-                btn.classList.remove('active');
-                btn.textContent = "RADAR: OFF";
-            }
-        }
-
-        function toggleAudio() {
-            const ctrl = document.getElementById('audio-control');
-            
-            if (state.audioElement.paused) {
-                state.audioElement.play();
-                ctrl.classList.add('playing');
-                document.getElementById('audio-text').textContent = 'ATC LIVE';
-            } else {
-                state.audioElement.pause();
-                ctrl.classList.remove('playing');
-                document.getElementById('audio-text').textContent = 'ATC OFFLINE';
-            }
-        }
-
-        function handleAudioChange(url) {
-            const wasPlaying = !state.audioElement.paused;
-            state.audioElement.src = url;
-            
-            if (wasPlaying) {
-                state.audioElement.play().catch(()=>{});
-            } else {
-                document.getElementById('audio-text').textContent = 'ATC OFFLINE';
-                document.getElementById('audio-control').classList.remove('playing');
-            }
-        }
-
-        function autoStartAudio() {
-            state.audioElement.src = CONFIG.LOCATIONS[state.location].audio;
-            state.audioElement.muted = true;
-            
-            state.audioElement.play().then(() => {
-                setTimeout(() => { 
-                    state.audioElement.muted = false;
-                    document.getElementById('audio-text').textContent = 'ATC LIVE';
-                }, 500);
-                document.getElementById('audio-control').classList.add('playing');
-            }).catch(() => {});
-        }
-
-        // --- STATS AND CLOCK ---
-        function setText(id, txt) {
-            document.getElementById(id).textContent = txt;
-        }
-
-        function updateStats() {
-            setText('aircraft-count', layers.planes.data.size);
-            setText('vessel-count', layers.vessels.data.size);
-            // Incidents only available for Seattle in this configuration
-            setText('incident-count', state.location === 'SEA' ? layers.incidents.data.size : 0);
-        }
-
-        function updateClock() {
-            const d = new Date();
-            const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-            setText('current-time', timeStr);
-        }
-
-        function pad(n) {
-            return n.toString().padStart(2,'0');
-        }
-
-        function updateLocationTitle() {
-            setText('location-title', CONFIG.LOCATIONS[state.location].name);
-        }
-
-        function updateConnection(status) {
-            const ind = document.getElementById('status-indicator');
-            ind.className = `status-indicator ${status}`;
-            
-            let text = 'OFFLINE';
-            if (status === 'connected') text = 'FEED ONLINE';
-            if (status === 'connecting') text = 'CONNECTING';
-            
-            setText('status-text', text);
-        }
-
-        function startTracking() {
-            // Start polling for planes every 3 seconds
-            fetchPlanes();
-            setInterval(fetchPlanes, 3000);
-            
-            // Connect and subscribe to ship data via WebSocket
-            connectWebSocket();
-            
-            // Start polling for fire incidents every 30 seconds
-            fetchFireIncidents();
-            setInterval(fetchFireIncidents, 30000);
-        }
-
-        // Kickoff the application
+        function updateLocationTitle() { document.getElementById('location-title').textContent = CONFIG.LOCATIONS[state.location].name; }
+        function updateStats() { document.getElementById('aircraft-count').textContent=layers.planes.data.size; document.getElementById('vessel-count').textContent=layers.vessels.data.size; document.getElementById('incident-count').textContent=state.location==='SEA'?layers.incidents.data.size:0; }
+        function updateClock() { const d=new Date(); document.getElementById('current-time').textContent=`${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`; }
+        
+        function startTracking() { fetchPlanes(); setInterval(fetchPlanes,3000); connectWebSocket(); fetchFireIncidents(); setInterval(fetchFireIncidents,30000); }
+        
         init();
     </script>
 </body>
