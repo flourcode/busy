@@ -839,16 +839,18 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // =========================================================================
-        // CONFIGURATION
-        // =========================================================================
         const CONFIG = {
             URLS: {
                 MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 RADAR: 'https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
                 SHIPS: 'wss://ports-production-8906.up.railway.app',
                 SEATTLE_911: 'https://data.seattle.gov/resource/grwu-wqtk.json',
-                ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`
+                ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`,
+                // MOVED INSIDE URLS OBJECT so the script can find CONFIG.URLS.AVIATIONSTACK
+                AVIATIONSTACK: 'http://api.aviationstack.com/v1/flights' 
+            },
+            KEYS: {
+                AVIATIONSTACK: 'ec8048d829c464b644cb5f5e6bcb23ec'
             },
             PATHS: {
                 PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z",
@@ -858,7 +860,7 @@
                 JFK: { name: 'JFK', lat: 40.6413, lon: -73.7781, zoom: 11, audio: 'https://d.liveatc.net/kjfk9_s', bbox: [[40.4, -74.3], [40.9, -73.7]] },
                 SEA: { name: 'SEA', lat: 47.4502, lon: -122.3088, viewLat: 47.6062, viewLon: -122.3321, zoom: 10, audio: 'https://d.liveatc.net/ksea3_gnd', bbox: [[47.4, -122.5], [47.8, -122.2]] },
                 DC: { name: 'IAD/DCA', lat: 38.8977, lon: -77.0365, zoom: 10, audio: 'https://d.liveatc.net/kiad1_1', bbox: [[38.5, -77.5], [39.2, -76.3]] },
-				ATL: { name: 'ATL', lat: 33.6407, lon: -84.4277, zoom: 11, audio: 'https://d.liveatc.net/katl_twr', bbox: [[33.5, -84.6], [33.8, -84.2]] },
+                ATL: { name: 'ATL', lat: 33.6407, lon: -84.4277, zoom: 11, audio: 'https://d.liveatc.net/katl_twr', bbox: [[33.5, -84.6], [33.8, -84.2]] },
                 MIA: { name: 'MIA', lat: 25.7959, lon: -80.2870, zoom: 11, audio: 'https://d.liveatc.net/kmia3_gnd', bbox: [[25.7, -80.3], [25.9, -80.1]] },
                 DEN: { name: 'DEN', lat: 39.8561, lon: -104.6737, zoom: 11, audio: 'https://d.liveatc.net/kden1_6', bbox: [[39.8, -104.8], [40.0, -104.5]] },
                 ORD: { name: 'ORD', lat: 41.9742, lon: -87.9073, zoom: 11, audio: 'https://d.liveatc.net/kord1n2_app_133625', bbox: [[41.8, -87.6], [42.0, -87.5]] },
@@ -1153,14 +1155,14 @@ function setupCustomDropdown() {
         
         function createHudIcon(t,r,c,h,p=CONFIG.PATHS.PLANE) { const html=h?`<span style="color:${c};transform:rotate(${r}deg);display:inline-block;font-size:24px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">&infin;</span>`:`<svg width="24" height="24" viewBox="0 0 24 24" style="transform:rotate(${r}deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path fill="${c}" d="${p}"/></svg>`; return L.divIcon({className:'marker-icon', html, iconSize:[24,24], iconAnchor:[12,12]}); }
         function updateTrailLine(m,i,t,c) { if(t.length<2)return; if(m.has(i)) m.get(i).setLatLngs(t).setStyle({color:c, opacity:0.5, weight:2}); else m.set(i, L.polyline(t,{color:c, opacity:0.5, weight:2}).addTo(state.map)); }
-// --- ROUTE FETCHING LOGIC (ADSBDB.COM) ---
+// --- ROUTE FETCHING (AVIATIONSTACK) ---
 const routeCache = new Map();
 
 async function fetchRoute(callsign) {
     const depEl = document.getElementById('ac-route-dep');
     const arrEl = document.getElementById('ac-route-arr');
 
-    // Reset UI to loading state
+    // 1. Reset UI
     depEl.textContent = "???";
     arrEl.textContent = "???";
     depEl.style.opacity = "0.5";
@@ -1168,30 +1170,40 @@ async function fetchRoute(callsign) {
 
     if (!callsign) return;
 
-    // Check Cache
+    // 2. Check Cache
     if (routeCache.has(callsign)) {
         const data = routeCache.get(callsign);
         updateRouteUI(data.dep, data.arr);
         return;
     }
 
-    // Fetch from ADSBDB (Free/HTTPS)
+    // 3. Fetch from AviationStack
     try {
-        const res = await fetch(`https://api.adsbdb.com/v0/callsign/${callsign}`);
+        // We use 'flight_icao' because airplanes.live gives us 'DAL89' (ICAO format)
+        const url = `${CONFIG.URLS.AVIATIONSTACK}?access_key=${CONFIG.KEYS.AVIATIONSTACK}&flight_icao=${callsign}&limit=1`;
+        
+        const res = await fetch(url);
         const json = await res.json();
 
-        if (json.response && json.response.flightroute) {
-            const route = json.response.flightroute;
-            const dep = route.origin.iata_code || route.origin.icao_code || "UNK";
-            const arr = route.destination.iata_code || route.destination.icao_code || "UNK";
+        if (json.data && json.data.length > 0) {
+            // AviationStack returns an array. The first item is usually the most recent/active.
+            const flight = json.data[0];
             
+            // Extract IATA codes (e.g., JFK) or fallback to ICAO (e.g., KJFK)
+            const dep = flight.departure.iata || flight.departure.icao || "UNK";
+            const arr = flight.arrival.iata || flight.arrival.icao || "UNK";
+            
+            // Save to cache so we don't waste API credits
             routeCache.set(callsign, { dep, arr });
+            
             updateRouteUI(dep, arr);
         } else {
+            // Valid call, but API has no record of this flight number
             updateRouteUI("N/A", "N/A");
         }
     } catch (e) {
-        console.log("Route fetch failed", e);
+        console.warn("AviationStack Error:", e);
+        // This usually happens if you try to fetch HTTP content from an HTTPS site
         updateRouteUI("ERR", "ERR");
     }
 }
@@ -1205,7 +1217,6 @@ function updateRouteUI(dep, arr) {
     depEl.style.opacity = "1";
     arrEl.style.opacity = "1";
 }
-
 
         function showInfo(type, data) {
             state.selectedItem = data.hex || data.mmsi || data.incident_number; state.isFollowing = true;
