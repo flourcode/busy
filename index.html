@@ -839,6 +839,9 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // =========================================================================
+        // CONFIGURATION
+        // =========================================================================
         const CONFIG = {
             URLS: {
                 MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -846,11 +849,10 @@
                 SHIPS: 'wss://ports-production-8906.up.railway.app',
                 SEATTLE_911: 'https://data.seattle.gov/resource/grwu-wqtk.json',
                 ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`,
-                // MOVED INSIDE URLS OBJECT so the script can find CONFIG.URLS.AVIATIONSTACK
-                AVIATIONSTACK: 'http://api.aviationstack.com/v1/flights' 
+                AEROAPI: 'https://aeroapi.flightaware.com/aeroapi/flights/'
             },
             KEYS: {
-                AVIATIONSTACK: 'ec8048d829c464b644cb5f5e6bcb23ec'
+                FLIGHTAWARE: 'kKhXbycwh5FvPUieopdIn9JT180vL34s'
             },
             PATHS: {
                 PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z",
@@ -878,7 +880,6 @@
                 SHIP: '#4a7c59'
             }
         };
-
         // --- DATA DICTIONARY ---
         const AIRCRAFT_TYPES = {
             "B737": "Boeing 737-700", "B738": "Boeing 737-800", "B739": "Boeing 737-900", "B38M": "Boeing 737 MAX 8", "B39M": "Boeing 737 MAX 9",
@@ -1155,7 +1156,7 @@ function setupCustomDropdown() {
         
         function createHudIcon(t,r,c,h,p=CONFIG.PATHS.PLANE) { const html=h?`<span style="color:${c};transform:rotate(${r}deg);display:inline-block;font-size:24px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">&infin;</span>`:`<svg width="24" height="24" viewBox="0 0 24 24" style="transform:rotate(${r}deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path fill="${c}" d="${p}"/></svg>`; return L.divIcon({className:'marker-icon', html, iconSize:[24,24], iconAnchor:[12,12]}); }
         function updateTrailLine(m,i,t,c) { if(t.length<2)return; if(m.has(i)) m.get(i).setLatLngs(t).setStyle({color:c, opacity:0.5, weight:2}); else m.set(i, L.polyline(t,{color:c, opacity:0.5, weight:2}).addTo(state.map)); }
-// --- ROUTE FETCHING (AVIATIONSTACK) ---
+// --- ROUTE FETCHING (FLIGHTAWARE STARTER) ---
 const routeCache = new Map();
 
 async function fetchRoute(callsign) {
@@ -1177,33 +1178,42 @@ async function fetchRoute(callsign) {
         return;
     }
 
-    // 3. Fetch from AviationStack
+    // 3. Fetch from FlightAware
     try {
-        // We use 'flight_icao' because airplanes.live gives us 'DAL89' (ICAO format)
-        const url = `${CONFIG.URLS.AVIATIONSTACK}?access_key=${CONFIG.KEYS.AVIATIONSTACK}&flight_icao=${callsign}&limit=1`;
+        // 'max_pages=1' ensures we only get the most relevant flights
+        const url = `${CONFIG.URLS.AEROAPI}${callsign.trim()}?max_pages=1`;
         
-        const res = await fetch(url);
+        const res = await fetch(url, {
+            headers: {
+                "x-apikey": CONFIG.KEYS.FLIGHTAWARE
+            }
+        });
+        
+        // Handle Limit Errors (429 = Too Many Requests)
+        if (res.status === 429) {
+            console.warn("FlightAware Rate Limit Exceeded (5/min)");
+            updateRouteUI("LMT", "LMT");
+            return;
+        }
+        
+        if (!res.ok) throw new Error("API Error");
+
         const json = await res.json();
 
-        if (json.data && json.data.length > 0) {
-            // AviationStack returns an array. The first item is usually the most recent/active.
-            const flight = json.data[0];
+        if (json.flights && json.flights.length > 0) {
+            // Find the active flight (where 'actual_on' is null means it hasn't arrived yet)
+            let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
+
+            const dep = flight.origin ? flight.origin.code_iata : "UNK";
+            const arr = flight.destination ? flight.destination.code_iata : "UNK";
             
-            // Extract IATA codes (e.g., JFK) or fallback to ICAO (e.g., KJFK)
-            const dep = flight.departure.iata || flight.departure.icao || "UNK";
-            const arr = flight.arrival.iata || flight.arrival.icao || "UNK";
-            
-            // Save to cache so we don't waste API credits
             routeCache.set(callsign, { dep, arr });
-            
             updateRouteUI(dep, arr);
         } else {
-            // Valid call, but API has no record of this flight number
             updateRouteUI("N/A", "N/A");
         }
     } catch (e) {
-        console.warn("AviationStack Error:", e);
-        // This usually happens if you try to fetch HTTP content from an HTTPS site
+        console.warn("FlightAware Error:", e);
         updateRouteUI("ERR", "ERR");
     }
 }
