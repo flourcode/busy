@@ -670,11 +670,27 @@
             location: 'JFK', map: null, isRadarOn: true, selectedItem: null, isFollowing: false,
             audioElement: document.getElementById('audio')
         };
-		const AIRPORT_CITIES = {
-    "JFK": "NEW YORK", "LHR": "LONDON", "LAX": "LOS ANGELES", "SEA": "SEATTLE", 
-    "ORD": "CHICAGO", "ATL": "ATLANTA", "MIA": "MIAMI", "DEN": "DENVER", 
-    "IAD": "WASHINGTON DC", "DCA": "WASHINGTON DC", "SFO": "SAN FRANCISCO",
-    "DXB": "DUBAI", "CDG": "PARIS", "AMS": "AMSTERDAM", "HND": "TOKYO"
+		// REPLACE your old AIRPORT_CITIES with this:
+const AIRPORT_DB = {
+    "JFK": { city: "NEW YORK", lat: 40.6413, lon: -73.7781 },
+    "EWR": { city: "NEWARK", lat: 40.6895, lon: -74.1745 },
+    "LGA": { city: "NEW YORK", lat: 40.7769, lon: -73.8740 },
+    "LHR": { city: "LONDON", lat: 51.4700, lon: -0.4543 },
+    "LGW": { city: "LONDON", lat: 51.1537, lon: -0.1821 },
+    "LAX": { city: "LOS ANGELES", lat: 33.9416, lon: -118.4085 },
+    "SEA": { city: "SEATTLE", lat: 47.4502, lon: -122.3088 },
+    "ORD": { city: "CHICAGO", lat: 41.9742, lon: -87.9073 },
+    "ATL": { city: "ATLANTA", lat: 33.6407, lon: -84.4277 },
+    "MIA": { city: "MIAMI", lat: 25.7959, lon: -80.2870 },
+    "DEN": { city: "DENVER", lat: 39.8561, lon: -104.6737 },
+    "IAD": { city: "WASHINGTON DC", lat: 38.9531, lon: -77.4565 },
+    "DCA": { city: "WASHINGTON DC", lat: 38.8512, lon: -77.0402 },
+    "SFO": { city: "SAN FRANCISCO", lat: 37.6213, lon: -122.3790 },
+    "DXB": { city: "DUBAI", lat: 25.2532, lon: 55.3657 },
+    "CDG": { city: "PARIS", lat: 49.0097, lon: 2.5479 },
+    "AMS": { city: "AMSTERDAM", lat: 52.3105, lon: 4.7683 },
+    "HND": { city: "TOKYO", lat: 35.5494, lon: 139.7798 },
+    "NRT": { city: "TOKYO", lat: 35.7719, lon: 140.3928 }
 };
         const layers = {
             base: null, radar: null,
@@ -915,8 +931,7 @@ function drawMagentaLine(planeLat, planeLon, destLat, destLon) {
 
         const routeCache = new Map();
 
-        // UPDATED: Accepts currentLat/currentLon to draw the line
-async function fetchRoute(callsign, currentLat, currentLon) {
+        async function fetchRoute(callsign, currentLat, currentLon) {
     const depEl = document.getElementById('ac-route-dep');
     const arrEl = document.getElementById('ac-route-arr');
     const depCityEl = document.getElementById('city-dep'); 
@@ -924,64 +939,73 @@ async function fetchRoute(callsign, currentLat, currentLon) {
 
     if (!callsign) return;
 
-    // (Optional: Keep your cache check here if you want)
-
     try {
         const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
         const res = await fetch(url);
         
+        // NOTE: Even if the fetch fails, we might want to use cached data, 
+        // but for now we assume success or jump to catch.
         if (!res.ok) throw new Error("API Error");
 
         const json = await res.json();
 
         if (json.flights && json.flights.length > 0) {
-            // Get the most relevant flight segment
             let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
 
             // 1. Get Codes
             const dep = flight.origin ? flight.origin.code_iata : "UNK";
             const arr = flight.destination ? flight.destination.code_iata : "UNK";
             
-            // 2. Get City Names (Live from API)
-            const depCity = flight.origin ? flight.origin.city : ""; 
-            const arrCity = flight.destination ? flight.destination.city : "";
+            // 2. Get City Names (Try API first, then DB)
+            const apiDepCity = flight.origin ? flight.origin.city : null; 
+            const apiArrCity = flight.destination ? flight.destination.city : null;
 
-            // 3. GET COORDINATES & DRAW LINE (The New Part)
-            const destLat = flight.destination ? flight.destination.latitude : null;
-            const destLon = flight.destination ? flight.destination.longitude : null;
+            const dbDep = AIRPORT_DB[dep];
+            const dbArr = AIRPORT_DB[arr];
 
+            const finalDepCity = apiDepCity || (dbDep ? dbDep.city : "");
+            const finalArrCity = apiArrCity || (dbArr ? dbArr.city : "");
+
+            // 3. GET COORDINATES (Try API first, then DB)
+            // This is the fix: If API returns null, we check our local list.
+            let destLat = flight.destination ? flight.destination.latitude : null;
+            let destLon = flight.destination ? flight.destination.longitude : null;
+
+            if (!destLat && dbArr) {
+                destLat = dbArr.lat;
+                destLon = dbArr.lon;
+            }
+
+            // Draw the line if we found coordinates anywhere
             if (destLat && destLon) {
+                console.log("Drawing line to", arr, destLat, destLon); // Debugging Log
                 drawMagentaLine(currentLat, currentLon, destLat, destLon);
+            } else {
+                console.warn("No coordinates found for destination:", arr);
             }
 
             // 4. Update UI
-            updateRouteUI(dep, arr, depCity, arrCity);
+            updateRouteUI(dep, arr, finalDepCity, finalArrCity);
             
-            // Update Cache
-            routeCache.set(callsign, { dep, arr, depCity, arrCity }); // Simplify cache for UI only
-        } else {
-            throw new Error("No flights found");
-        }
+            // Update Cache (Simplified)
+            routeCache.set(callsign, { dep, arr, depCity: finalDepCity, arrCity: finalArrCity }); 
+        } 
     } catch (e) {
-        // Error State
+        console.error("Route Error:", e);
         updateRouteUI("---", "---", "", "");
     }
 }
-
-        function updateRouteUI(dep, arr, apiDepCity, apiArrCity) {
+        function updateRouteUI(dep, arr, cityDep, cityArr) {
     const depEl = document.getElementById('ac-route-dep');
     const arrEl = document.getElementById('ac-route-arr');
-    const depCityEl = document.getElementById('city-dep'); 
+    const depCityEl = document.getElementById('city-dep');
     const arrCityEl = document.getElementById('city-arr');
     
     depEl.textContent = dep;
     arrEl.textContent = arr;
     
-    // Added safety checks
-    const cities = typeof AIRPORT_CITIES !== 'undefined' ? AIRPORT_CITIES : {};
-    
-    depCityEl.textContent = apiDepCity || cities[dep] || "";
-    arrCityEl.textContent = apiArrCity || cities[arr] || "";
+    depCityEl.textContent = cityDep;
+    arrCityEl.textContent = cityArr;
     
     depEl.style.opacity = "1";
     arrEl.style.opacity = "1";
