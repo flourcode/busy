@@ -705,7 +705,7 @@
     state.map.getPane('routePane').style.zIndex = 600; // Higher than Radar (500)
 
     layers.base = L.tileLayer(CONFIG.URLS.MAP, { attribution: '© OpenStreetMap', maxZoom: 19, className: 'map-tiles' }).addTo(state.map);
-    layers.radar = L.tileLayer(CONFIG.URLS.RADAR, { opacity: 0.5, zIndex: 500, className: 'radar-tiles' });
+    layers.radar = L.tileLayer(CONFIG.URLS.RADAR, { opacity: 0.5, zIndex: 300, className: 'radar-tiles' });
     updateLocationMarker();
     L.control.zoom({ position: 'bottomright' }).addTo(state.map);
 }
