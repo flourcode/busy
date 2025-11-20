@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0d1f19">
-    <title>AIRPORT 2025</title>
+    <title>AIRPORT 2025 - FLIGHT OPS</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +33,6 @@
             --color-comm: #a8c256; 
             --color-ga: #6b9b37;   
             --color-mil: #f1f8e9;  
-            --color-ship: #4a7c59; 
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -62,6 +61,7 @@
             filter: grayscale(50%) invert(100%) sepia(50%) hue-rotate(70deg) saturate(80%) brightness(0.7) contrast(1.2);
         }
 
+        /* --- HEADER --- */
         .header-info { 
             position: fixed; 
             top: 16px; 
@@ -100,7 +100,7 @@
             z-index: 1000; 
             display: flex; 
             align-items: center; 
-            gap: 10px; 
+            gap: 8px; 
         }
 
         .panel-style {
@@ -122,39 +122,56 @@
             transition: all 0.2s ease;
             stroke: var(--g-text-muted);
         }
-        .recenter-btn:hover {
-            stroke: var(--g-accent-1);
-            transform: scale(1.1);
-        }
-        .recenter-btn:active {
-            transform: scale(0.95);
-        }
+        .recenter-btn:hover { stroke: var(--g-accent-1); transform: scale(1.1); }
+        .recenter-btn:active { transform: scale(0.95); }
 
-        .location-selector {
-            background-color: transparent; 
-            border: none; 
-            color: var(--g-accent-1); 
-            font-family: 'Inter', sans-serif; 
-            font-size: 13px; 
+        /* --- DROPDOWN --- */
+        .custom-select-wrapper {
+            position: relative;
+            user-select: none;
+            width: 150px; 
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .custom-select { position: relative; display: flex; flex-direction: column; }
+        .custom-select__trigger {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            font-size: 13px;
             font-weight: 700;
-            cursor: pointer; 
-            outline: none; 
-            text-transform: uppercase; 
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            padding-right: 15px; 
+            color: var(--g-accent-1); 
+            line-height: 20px;
+            background: transparent;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
         }
-
-        .location-selector option {
-            background-color: var(--g-bg-5); 
-            color: var(--g-text-main);      
-            padding: 10px;
-            font-weight: 500;
+        .custom-select__trigger:hover { text-shadow: 0 0 8px rgba(168, 194, 86, 0.6); }
+        .arrow { position: relative; height: 10px; width: 10px; margin-left: 10px; }
+        .arrow::after {
+            content: ""; position: absolute; top: 3px;
+            border: solid var(--g-text-muted); border-width: 0 2px 2px 0;
+            padding: 3px; transform: rotate(45deg); transition: 0.2s;
         }
-
-        .location-selector:hover {
-            text-shadow: 0 0 5px rgba(168, 194, 86, 0.5);
+        .custom-select.open .arrow::after { transform: rotate(-135deg); border-color: var(--g-accent-1); }
+        .custom-options {
+            position: absolute; display: block; top: 100%; left: 0; right: 0;
+            border: 1px solid var(--color-panel-border); border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.8); background: var(--g-bg-4); 
+            transition: all 0.2s; opacity: 0; visibility: hidden;
+            pointer-events: none; z-index: 2000; margin-top: 8px;
+        }
+        .custom-select.open .custom-options { opacity: 1; visibility: visible; pointer-events: all; }
+        .custom-option {
+            position: relative; display: block; padding: 8px 12px;
+            font-size: 12px; font-weight: 500; color: var(--g-text-main); 
+            cursor: pointer; transition: all 0.1s; border-bottom: 1px solid var(--g-bg-2); 
+        }
+        .custom-option:last-of-type { border-bottom: none; }
+        .custom-option:hover, .custom-option.selected {
+            background-color: var(--g-accent-1); color: var(--g-bg-5); font-weight: 700;
         }
 
         .control-btn {
@@ -167,7 +184,6 @@
             transition: all 0.2s ease;
             text-transform: uppercase;
         }
-
         .control-btn.active {
             border-color: var(--g-accent-1); 
             color: var(--g-bg-5); 
@@ -184,433 +200,150 @@
             text-align: center;
         }
 
+        /* --- METRICS --- */
         .metrics-panel { 
-            position: fixed; 
-            left: 16px; 
-            top: 80px; 
-            z-index: 900; 
-            width: 140px; 
-            pointer-events: none; 
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            position: fixed; left: 16px; top: 80px; z-index: 900; 
+            width: 140px; pointer-events: none; display: flex; flex-direction: column; gap: 8px;
         }
-
         .metric-block {
-            background: rgba(26, 58, 46, 0.9); 
-            border-left: 4px solid var(--g-bg-2); 
-            padding: 8px 12px; 
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            background: rgba(26, 58, 46, 0.9); border-left: 4px solid var(--g-accent-1); 
+            padding: 8px 12px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-
         .metric-label { 
-            font-family: 'Inter', sans-serif; 
-            font-size: 10px; 
-            font-weight: 600;
-            color: var(--g-text-muted); 
-            margin-bottom: 2px; 
-            text-transform: uppercase;
+            font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600;
+            color: var(--g-text-muted); margin-bottom: 2px; text-transform: uppercase;
         }
-
         .metric-value { 
-            font-family: 'Share Tech Mono', monospace; 
-            font-size: 22px; 
-            font-weight: 500; 
-            color: var(--g-text-main); 
+            font-family: 'Share Tech Mono', monospace; font-size: 22px; font-weight: 500; color: var(--g-text-main); 
         }
 
-        .metric-block.aircraft { border-left-color: var(--g-accent-1); }
-        .metric-block.vessels { border-left-color: var(--g-bg-1); }
-        .metric-block.incidents { border-left-color: var(--g-accent-2); }
-
+        /* --- LEGEND --- */
         .legend-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 900;
-            background: var(--color-panel-bg);
-            border: 1px solid var(--color-panel-border);
-            border-radius: 6px;
-            padding: 12px;
-            width: 160px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            position: fixed; bottom: 20px; right: 20px; z-index: 900;
+            background: var(--color-panel-bg); border: 1px solid var(--color-panel-border);
+            border-radius: 6px; padding: 12px; width: 160px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
         .legend-header {
-            font-size: 10px;
-            color: var(--g-text-muted);
-            margin-bottom: 8px;
-            font-weight: 700;
-            letter-spacing: 1px;
+            font-size: 10px; color: var(--g-text-muted); margin-bottom: 8px; font-weight: 700; letter-spacing: 1px;
         }
         .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
-        .legend-item:last-child { margin-bottom: 0; }
         .legend-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
         .legend-item span { font-size: 11px; color: var(--g-text-main); }
 
+        /* --- HUD / INFO PANEL --- */
         .info-panel {
             position: fixed; 
             bottom: 20px; 
             left: 50%; 
             transform: translateX(-50%); 
             z-index: 900;
-            background: var(--g-bg-5); 
-            border: 4px solid var(--g-bg-2); 
-            width: 500px; 
+            background: rgba(13, 31, 25, 0.95); 
+            border: 1px solid var(--g-bg-2); 
+            width: 460px; 
             max-width: 95vw;
-            height: 280px; 
+            height: 240px; /* Compact Height */
             opacity: 0; 
             pointer-events: none; 
-            transition: opacity 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             border-radius: 12px; 
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
         }
 
         .info-panel.visible { 
             opacity: 1; 
             pointer-events: all; 
+            transform: translateX(-50%) translateY(0);
         }
+        
+        /* Close Button */
+        .close-hud-btn {
+            position: absolute; top: 10px; right: 10px; color: var(--g-text-muted);
+            font-size: 24px; line-height: 20px; cursor: pointer; z-index: 50; padding: 5px;
+        }
+        .close-hud-btn:hover { color: var(--g-accent-1); }
 
         .pfd-data-overlay {
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%;
-            padding: 16px 20px;
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start;
-            z-index: 20;
-            pointer-events: none;
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 16px 20px; display: flex; justify-content: space-between; 
+            align-items: flex-start; z-index: 20; pointer-events: none;
         }
         
         .info-title { 
-            font-family: 'Inter', sans-serif; 
-            font-size: 20px; 
-            font-weight: 700; 
-            color: var(--g-text-main); 
-            line-height: 1;
-            padding: 2px;
-            
+            font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 700; color: var(--g-text-main); line-height: 1; padding: 2px;
         }
         .info-subtitle { 
-            font-family: 'Share Tech Mono', monospace; 
-            font-size: 14px; 
-            font-weight: 700;
-            color: var(--g-text-main); 
-            letter-spacing: 1px; 
-            text-transform: uppercase; 
-            margin-top: 2px; 
-            padding: 2px;        
-            border-top: none;
+            font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: 700;
+            color: var(--g-text-main); letter-spacing: 1px; text-transform: uppercase; 
+            margin-top: 2px; padding: 2px;        
         }
-        
         .info-reg {
-            font-family: 'Share Tech Mono', monospace; 
-            font-size: 14px; 
-			font-weight: 700;
-            color: var(--g-text-main); 
-            letter-spacing: 1px; 
-            text-transform: uppercase; 
-            margin-top: 2px; 
-            padding: 2px;
-           
+            font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: 700;
+            color: var(--g-text-main); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; padding: 2px;
         }
-        
         .pfd-heading-box { text-align: right; }
         .hdg-value { 
-            font-family: 'Share Tech Mono', monospace; 
-            font-size: 24px; 
-            font-weight: 700; 
-            color: var(--g-text-main); 
-            line-height: 1; 
-            padding: 2px;
-           
+            font-family: 'Share Tech Mono', monospace; font-size: 24px; font-weight: 700; color: var(--g-text-main); line-height: 1; padding: 2px;
         }
 
         .info-stats-container {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            background: var(--g-bg-4); 
-            z-index: 20;
-            border-top: 2px solid var(--g-bg-2);
+            position: absolute; bottom: 0; width: 100%; background: var(--g-bg-4); 
+            z-index: 20; border-top: 2px solid var(--g-bg-2);
         }
-
-        .info-stats { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-        }
-
-        .info-stat { 
-            padding: 12px 0; 
-            text-align: center; 
-            border-right: 1px solid var(--g-bg-2); 
-        }
-        
+        .info-stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .info-stat { padding: 12px 0; text-align: center; border-right: 1px solid var(--g-bg-2); }
         .info-stat:last-child { border-right: none; }
         .info-stat-value { 
-            font-family: 'Share Tech Mono', monospace; 
-            font-size: 22px; 
-            font-weight: 500; 
-            color: var(--g-text-main); 
-            margin-bottom: 2px; 
-            text-shadow: 0 0 5px rgba(168, 194, 86, 0.2);
+            font-family: 'Share Tech Mono', monospace; font-size: 22px; font-weight: 500; color: var(--g-text-main); margin-bottom: 2px; text-shadow: 0 0 5px rgba(168, 194, 86, 0.2);
         }
         .info-stat-label { 
-            font-family: 'Inter', sans-serif; 
-            font-size: 9px; 
-            font-weight: 600;
-            color: var(--g-text-muted); 
-            letter-spacing: 0.5px; 
-            text-transform: uppercase; 
+            font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 600; color: var(--g-text-muted); letter-spacing: 0.5px; text-transform: uppercase; 
         }
 
-        #ahrs-full-display {
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-            z-index: 0; 
-            overflow: hidden; 
-            background: var(--g-bg-5);
-        }
+        /* AHRS */
+        #ahrs-full-display { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; background: var(--g-bg-5); }
+        .ahrs-horizon-wrapper { width: 300%; height: 300%; position: absolute; top: -100%; left: -100%; will-change: transform; transition: transform 0.2s linear; }
+        .ahrs-sky { width: 100%; height: 50%; background: var(--color-sky); position: absolute; top: 0; left: 0; }
+        .ahrs-ground { width: 100%; height: 50%; background: var(--g-bg-5); position: absolute; top: 50%; left: 0; border-top: 2px solid var(--g-accent-1); }
+        .ahrs-ladder { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 33.33%; height: 33.33%; opacity: 0.9; }
+        .ahrs-crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 180px; height: 60px; z-index: 5; pointer-events: none; }
 
-        .ahrs-horizon-wrapper {
-            width: 300%; 
-            height: 300%; 
-            position: absolute; 
-            top: -100%; 
-            left: -100%;
-            will-change: transform; 
-            transition: transform 0.2s linear;
+        .pfd-route-overlay {
+            position: absolute; top: 16px; /* Compact Position */
+            left: 0; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 25;
         }
-
-        .ahrs-sky { 
-            width: 100%; 
-            height: 50%; 
-            background: var(--color-sky); 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
+        .route-box {
+            background-color: rgba(13, 31, 25, 0.4); border: 1px solid var(--g-bg-2);
+            padding: 4px 12px; border-radius: 20px; display: flex; align-items: center; gap: 12px; backdrop-filter: blur(2px);
         }
-
-        .ahrs-ground { 
-            width: 100%; 
-            height: 50%; 
-            background: var(--g-bg-5); 
-            position: absolute; 
-            top: 50%; 
-            left: 0; 
-            border-top: 2px solid var(--g-accent-1); 
+        #ac-route-dep, #ac-route-arr {
+            font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 700; color: var(--g-accent-1); text-shadow: 0 0 8px rgba(168, 194, 86, 0.4);
         }
-
-        .ahrs-ladder { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            width: 33.33%; 
-            height: 33.33%; 
-            opacity: 0.9; 
-        }
-
-        .ahrs-crosshair { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            width: 180px; 
-            height: 60px; 
-            z-index: 5; 
-            pointer-events: none; 
-        }
-
-        .target-reticle-icon { 
-            pointer-events: none; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
-
-        .reticle-ring {
-            position: absolute; 
-            width: 60px; 
-            height: 60px;
-            border: 4px solid var(--g-accent-1); 
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--g-accent-1);
-            animation: pulse-ring 2s infinite;
-        }
-
-        @keyframes pulse-ring {
-            0% { transform: scale(0.9); opacity: 0.6; }
-            50% { transform: scale(1.0); opacity: 1; }
-            100% { transform: scale(0.9); opacity: 0.6; }
-        }
+        .route-arrow { font-size: 18px; color: var(--g-text-muted); }
 
         .audio-control { 
-            position: fixed; 
-            bottom: 20px; 
-            left: 20px; 
-            z-index: 10; 
-            background: var(--color-panel-bg); 
-            border: 1px solid var(--color-panel-border); 
-            padding: 8px 12px; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            cursor: pointer; 
-            border-radius: 6px; 
-            white-space: nowrap; 
-            min-width: 100px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            position: fixed; bottom: 20px; left: 20px; z-index: 10; 
+            background: var(--color-panel-bg); border: 1px solid var(--color-panel-border); 
+            padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 6px; 
+            white-space: nowrap; min-width: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         .audio-control.playing svg { fill: var(--g-accent-1); } 
         .audio-control svg { fill: var(--g-text-muted); }
-        .audio-text { font-family: 'Inter', sans-serif; font-weight:600; font-size: 11px; color: var(--g-text-main); }
 
-        @media (max-width: 768px) {
+        /* MOBILE OPTIMIZATION */
+        @media (max-width: 600px) {
             .legend-panel { display: none; }
-            .info-panel { width: 95%; bottom: 12px; height: 250px; }
-        }
-        
-        .custom-select-wrapper {
-            position: relative;
-            user-select: none;
-            width: 150px; 
-            font-family: 'Share Tech Mono', monospace;
-        }
-
-        .custom-select {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .custom-select__trigger {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 6px 12px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--g-accent-1); 
-            line-height: 20px;
-            background: transparent;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .custom-select__trigger:hover {
-            text-shadow: 0 0 8px rgba(168, 194, 86, 0.6);
-        }
-
-        .arrow {
-            position: relative;
-            height: 10px;
-            width: 10px;
-            margin-left: 10px;
-        }
-        .arrow::after {
-            content: "";
-            position: absolute;
-            top: 3px;
-            border: solid var(--g-text-muted);
-            border-width: 0 2px 2px 0;
-            padding: 3px;
-            transform: rotate(45deg);
-            transition: 0.2s;
-        }
-        .custom-select.open .arrow::after {
-            transform: rotate(-135deg);
-            border-color: var(--g-accent-1);
-        }
-
-        .custom-options {
-            position: absolute;
-            display: block;
-            top: 100%;
-            left: 0;
-            right: 0;
-            border: 1px solid var(--color-panel-border);
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.8);
-            background: var(--g-bg-4); 
-            transition: all 0.2s;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            z-index: 2000;
-            margin-top: 8px;
-        }
-
-        .custom-select.open .custom-options {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: all;
-        }
-
-        .custom-option {
-            position: relative;
-            display: block;
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--g-text-main); 
-            cursor: pointer;
-            transition: all 0.1s;
-            border-bottom: 1px solid var(--g-bg-2); 
-        }
-
-        .custom-option:last-of-type {
-            border-bottom: none;
-        }
-
-        .custom-option:hover,
-        .custom-option.selected {
-            background-color: var(--g-accent-1); 
-            color: var(--g-bg-5);                
-            font-weight: 700;
-        }
-        
-        .pfd-route-overlay {
-            position: absolute;
-            top: 16px; 
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            pointer-events: none;
-            z-index: 25;
-        }
-
-        .route-box {
-            background-color: rgba(13, 31, 25, 0.4);
-            border: 1px solid var(--g-bg-2);
-            padding: 6px 16px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            backdrop-filter: blur(2px);
-        }
-
-        #ac-route-dep, #ac-route-arr {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--g-accent-1); 
-            text-shadow: 0 0 8px rgba(168, 194, 86, 0.4);
-        }
-
-        .route-arrow {
-            font-size: 18px;
-            color: var(--g-text-muted);
+            .time-display { display: none; }
+            .mission-id { display: none; }
+            .location-title { font-size: 18px; }
+            
+            .info-panel {
+                bottom: 0; left: 0; width: 100%; max-width: 100%;
+                border-radius: 16px 16px 0 0; transform: translateY(100%);
+                border-left: none; border-right: none; border-bottom: none;
+            }
+            .info-panel.visible { transform: translateY(0); }
         }
     </style>
 </head>
@@ -624,27 +357,26 @@
 
     <div class="header-controls">
         <div class="location-badge panel-style">
-    <svg id="recenter-btn" class="recenter-btn" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" title="Recenter Map"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2"></circle></svg>
-    
-    <div class="custom-select-wrapper">
-        <div class="custom-select">
-            <div class="custom-select__trigger">
-                <span id="selected-text">JFK INT'L</span>
-                <div class="arrow"></div>
-            </div>
-            <div class="custom-options">
-                <span class="custom-option selected" data-value="JFK">JFK INT'L</span>
-                <span class="custom-option" data-value="SEA">SEATTLE-TAC</span>
-                <span class="custom-option" data-value="ATL">HARTSFIELD</span>
-                <span class="custom-option" data-value="DC">REAGAN/DULLES</span>
-                <span class="custom-option" data-value="MIA">MIAMI INT'L</span>
-                <span class="custom-option" data-value="DEN">DENVER INT'L</span>
-                <span class="custom-option" data-value="ORD">O'HARE INT'L</span>
-                <span class="custom-option" data-value="LAX">LOS ANGELES</span>
+            <svg id="recenter-btn" class="recenter-btn" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" title="Recenter Map"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+            <div class="custom-select-wrapper">
+                <div class="custom-select">
+                    <div class="custom-select__trigger">
+                        <span id="selected-text">JFK INT'L</span>
+                        <div class="arrow"></div>
+                    </div>
+                    <div class="custom-options">
+                        <span class="custom-option selected" data-value="JFK">JFK INT'L</span>
+                        <span class="custom-option" data-value="SEA">SEATTLE-TAC</span>
+                        <span class="custom-option" data-value="ATL">HARTSFIELD</span>
+                        <span class="custom-option" data-value="DC">REAGAN/DULLES</span>
+                        <span class="custom-option" data-value="MIA">MIAMI INT'L</span>
+                        <span class="custom-option" data-value="DEN">DENVER INT'L</span>
+                        <span class="custom-option" data-value="ORD">O'HARE INT'L</span>
+                        <span class="custom-option" data-value="LAX">LOS ANGELES</span>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    </div>
         <div id="radar-control" class="control-btn panel-style active">RADAR: ON</div>
         <div class="time-display panel-style" id="current-time">00:00:00</div>
     </div>
@@ -654,14 +386,6 @@
             <div class="metric-label">AIR TRAFFIC</div>
             <div class="metric-value" id="aircraft-count">0</div>
         </div>
-        <div class="metric-block vessels">
-            <div class="metric-label">MARINE TRAFFIC</div>
-            <div class="metric-value" id="vessel-count">0</div>
-        </div>
-        <div class="metric-block incidents">
-            <div class="metric-label">ACTIVE INCIDENTS</div>
-            <div class="metric-value" id="incident-count">0</div>
-        </div>
     </div>
 
     <div class="legend-panel">
@@ -670,12 +394,11 @@
             <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#a8c256;border-radius:50%;box-shadow:0 0 2px #a8c256"></div></div><span>COMMERCIAL</span></div>
             <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#6b9b37;border-radius:50%"></div></div><span>GENERAL AVN</span></div>
             <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#f1f8e9;border-radius:50%"></div></div><span>MILITARY</span></div>
-            <div class="legend-item"><div class="legend-icon"><div style="width:8px;height:8px;background:#4a7c59;border-radius:50%"></div></div><span>MARITIME</span></div>
         </div>
     </div>
 
     <div id="info-panel" class="info-panel">
-        
+        <div class="close-hud-btn" onclick="hideInfoBox()">×</div>
         <div id="aircraft-info" style="display: none; height: 100%;">
             <div id="ahrs-full-display">
                 <div id="ahrs-horizon" class="ahrs-horizon-wrapper">
@@ -685,7 +408,8 @@
                         <line x1="100" y1="50" x2="300" y2="50" stroke="#a8c256" stroke-width="2" opacity="0.6" />
                         <text x="310" y="54" fill="#a8c256" font-family="Share Tech Mono" font-size="14" opacity="0.8">10</text>
                         <line x1="150" y1="75" x2="250" y2="75" stroke="#a8c256" stroke-width="2" opacity="0.6" />
-                        <line x1="0" y1="100" x2="400" y2="100" stroke="#a8c256" stroke-width="3" /> <line x1="150" y1="125" x2="250" y2="125" stroke="#a8c256" stroke-width="2" opacity="0.6" />
+                        <line x1="0" y1="100" x2="400" y2="100" stroke="#a8c256" stroke-width="3" /> 
+                        <line x1="150" y1="125" x2="250" y2="125" stroke="#a8c256" stroke-width="2" opacity="0.6" />
                         <line x1="100" y1="150" x2="300" y2="150" stroke="#a8c256" stroke-width="2" opacity="0.6" />
                         <text x="310" y="154" fill="#a8c256" font-family="Share Tech Mono" font-size="14" opacity="0.8">10</text>
                     </svg>
@@ -731,45 +455,6 @@
                 </div>
             </div>
         </div>
-
-        <div id="vessel-info" style="display: none; padding: 20px; background: var(--g-bg-4); color: var(--g-text-main);">
-            <div style="margin-bottom: 20px; border-bottom: 1px solid var(--g-bg-2); padding-bottom: 14px;">
-                <div class="info-title" id="vs-name" style="font-size: 20px; background:none; border:none;"></div>
-                <div class="info-subtitle" id="vs-type" style="color: var(--g-text-muted); background:none; border:none;"></div>
-            </div>
-            <div class="info-stats" style="background: transparent; border: none;">
-                <div class="info-stat" style="border-color: var(--g-bg-2);">
-                    <div class="info-stat-value" id="vs-spd"></div>
-                    <div class="info-stat-label">SPEED</div>
-                </div>
-                <div class="info-stat" style="border-color: var(--g-bg-2);">
-                    <div class="info-stat-value" id="vs-hdg"></div>
-                    <div class="info-stat-label">HEADING</div>
-                </div>
-                <div class="info-stat" style="border: none;">
-                    <div class="info-stat-value" id="vs-dest" style="font-size:14px; padding-top:4px;"></div>
-                    <div class="info-stat-label">DESTINATION</div>
-                </div>
-            </div>
-        </div>
-
-        <div id="incident-info" style="display: none; padding: 20px; background: var(--g-bg-4);">
-            <div style="margin-bottom: 20px; border-bottom: 1px solid var(--g-bg-2); padding-bottom: 14px;">
-                <div class="info-title" id="inc-type" style="font-size: 20px; background:none; border:none;"></div>
-                <div class="info-subtitle" id="inc-addr" style="color: var(--g-accent-2); background:none; border:none;"></div>
-            </div>
-            <div class="info-stats" style="background: transparent; border: none;">
-                <div class="info-stat" style="border-color: var(--g-bg-2);">
-                    <div class="info-stat-value" id="inc-id" style="font-size:18px;"></div>
-                    <div class="info-stat-label">INCIDENT ID</div>
-                </div>
-                <div class="info-stat" style="border-color: var(--g-bg-2);">
-                    <div class="info-stat-value" id="inc-time" style="font-size:18px;"></div>
-                    <div class="info-stat-label">TIME REPORTED</div>
-                </div>
-                <div class="info-stat" style="border: none;"></div>
-            </div>
-        </div>
     </div>
 
     <div id="audio-control" class="audio-control">
@@ -785,14 +470,12 @@
             URLS: {
                 MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 RADAR: 'https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
-                SHIPS: 'wss://ports-production-8906.up.railway.app',
-                SEATTLE_911: 'https://data.seattle.gov/resource/grwu-wqtk.json',
                 ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`,
+                // UPDATED PROD URL
                 AWS_PROXY: 'https://yd7ndqoiq5.execute-api.us-east-1.amazonaws.com/prod/'
             },
             PATHS: {
-                PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z",
-                SHIP: "M12 4 L8 8 L8 19 L16 19 L16 8 Z"
+                PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"
             },
             LOCATIONS: {
                 JFK: { name: 'JFK', lat: 40.6413, lon: -73.7781, zoom: 11, audio: 'https://d.liveatc.net/kjfk9_s', bbox: [[40.4, -74.3], [40.9, -73.7]] },
@@ -810,9 +493,6 @@
                 MIL: '#f1f8e9',  
                 HELI: '#8ba876', 
                 OTHER: '#3d5e4a', 
-                TUG: '#4a7c59',
-                PILOT: '#4a7c59',
-                SHIP: '#4a7c59'
             }
         };
         
@@ -827,13 +507,12 @@
 
         const state = {
             location: 'JFK', map: null, isRadarOn: true, selectedItem: null, isFollowing: false,
-            socket: null, reconnectTimer: null, audioElement: document.getElementById('audio')
+            audioElement: document.getElementById('audio')
         };
         const layers = {
             base: null, radar: null,
             planes: { markers: new Map(), trails: new Map(), lines: new Map(), data: new Map() },
-            vessels: { markers: new Map(), trails: new Map(), lines: new Map(), data: new Map() },
-            incidents: { markers: new Map(), data: new Map() }, overlays: [], reticle: null
+            overlays: [], reticle: null
         };
 
         function init() {
@@ -860,14 +539,15 @@
         function setupEventListeners() {
             document.getElementById('audio-control').addEventListener('click', toggleAudio);
             document.getElementById('radar-control').addEventListener('click', toggleRadar);
-            
             document.getElementById('recenter-btn').addEventListener('click', recenterView);
             
             state.map.on('click', (e) => {
                 if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
                 const wasFollowing = state.isFollowing || state.selectedItem;
-                hideInfoBox();
-                if (wasFollowing) recenterView();
+                // Don't hide immediately if clicking another plane
+                // But if clicking map blank space:
+                if (!wasFollowing) hideInfoBox();
+                
                 if (state.audioElement.paused) {
                     state.audioElement.muted = false;
                     state.audioElement.play().then(()=>{ 
@@ -923,9 +603,7 @@
             state.map.setView([loc.viewLat||loc.lat, loc.viewLon||loc.lon], loc.zoom);
             updateLocationMarker(); clearMapData(); hideInfoBox();
             handleAudioChange(loc.audio);
-            if(state.socket?.readyState===WebSocket.OPEN) subscribeToShips();
             if(state.isRadarOn) layers.radar.addTo(state.map);
-            fetchFireIncidents();
         }
         function updateLocationMarker() {
             layers.overlays.forEach(l=>state.map.removeLayer(l)); layers.overlays=[];
@@ -937,13 +615,12 @@
             }
         }
         function clearMapData() {
-            ['planes','vessels','incidents'].forEach(k=>{
-                layers[k].markers.forEach(m=>state.map.removeLayer(m));
-                layers[k].markers.clear();
-                if(layers[k].lines){ layers[k].lines.forEach(l=>state.map.removeLayer(l)); layers[k].lines.clear(); }
-                if(layers[k].trails) layers[k].trails.clear();
-                layers[k].data.clear();
-            });
+            layers.planes.markers.forEach(m=>state.map.removeLayer(m));
+            layers.planes.markers.clear();
+            if(layers.planes.lines){ layers.planes.lines.forEach(l=>state.map.removeLayer(l)); layers.planes.lines.clear(); }
+            if(layers.planes.trails) layers.planes.trails.clear();
+            layers.planes.data.clear();
+            
             if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
             updateStats();
         }
@@ -1021,45 +698,6 @@
             layers.reticle = L.marker([lat,lon],{icon, zIndexOffset:1000}).addTo(state.map);
         }
 
-        function connectWebSocket() {
-            state.socket = new WebSocket(CONFIG.URLS.SHIPS);
-            state.socket.onopen = () => { setTimeout(subscribeToShips,2000); };
-            state.socket.onmessage = (e) => { try{ const d=JSON.parse(e.data); if(d.type!=='status') processAIS(d); }catch(err){} };
-            state.socket.onclose = () => { setTimeout(connectWebSocket,5000); };
-        }
-        function subscribeToShips() { if(state.socket?.readyState===WebSocket.OPEN) state.socket.send(JSON.stringify({action:'subscribe', BoundingBoxes:[CONFIG.LOCATIONS[state.location].bbox]})); }
-        function processAIS(d) {
-            const m=d.MetaData; if(!m?.MMSI) return;
-            let v = layers.vessels.data.get(m.MMSI)||{mmsi:m.MMSI, name:m.ShipName||m.MMSI, type:0, speed:0, lat:null, lon:null};
-            if(d.MessageType==='PositionReport' && m.latitude) { v.lat=m.latitude; v.lon=m.longitude; v.speed=d.Message.PositionReport.Sog||0; v.heading=d.Message.PositionReport.TrueHeading||0; if(v.speed<0.1) return; }
-            else if(d.MessageType==='ShipStaticData') { v.name=d.Message.ShipStaticData.Name; v.type=d.Message.ShipStaticData.Type; v.dest=d.Message.ShipStaticData.Destination; }
-            layers.vessels.data.set(m.MMSI, v);
-            if(v.lat) {
-                if(!layers.vessels.trails.has(m.MMSI)) layers.vessels.trails.set(m.MMSI,[]);
-                const t=layers.vessels.trails.get(m.MMSI); t.push([v.lat,v.lon]); if(t.length>100)t.shift();
-                let col=CONFIG.COLORS.SHIP; 
-                const icon=createHudIcon('ship', v.heading, col, false, CONFIG.PATHS.SHIP);
-                if(layers.vessels.markers.has(m.MMSI)) layers.vessels.markers.get(m.MMSI).setLatLng([v.lat,v.lon]).setIcon(icon);
-                else { const mk=L.marker([v.lat,v.lon],{icon}).addTo(state.map); mk.on('click', ()=>showInfo('vessel',layers.vessels.data.get(m.MMSI))); layers.vessels.markers.set(m.MMSI,mk); }
-                updateTrailLine(layers.vessels.lines, m.MMSI, t, col);
-            }
-            updateStats();
-        }
-        async function fetchFireIncidents() {
-            if(state.location!=='SEA') { updateStats(); return; }
-            try {
-                const t=new Date(Date.now()-36000000).toISOString().split('.')[0];
-                const res=await fetch(`${CONFIG.URLS.SEATTLE_911}?$where=datetime>'${t}'`); const data=await res.json();
-                data.forEach(inc=>{
-                    if(!inc.latitude) return; layers.incidents.data.set(inc.incident_number,inc);
-                    if(!layers.incidents.markers.has(inc.incident_number)) {
-                        const icon=L.divIcon({className:'marker-icon incident-marker', html:'<span style="font-size:24px;color:#a8c256;text-shadow:0 0 5px #a8c256">🔥</span>', iconSize:[24,24], iconAnchor:[12,12]});
-                        const m=L.marker([inc.latitude,inc.longitude],{icon}).addTo(state.map); m.on('click', ()=>showInfo('incident',inc)); layers.incidents.markers.set(inc.incident_number,m);
-                    }
-                }); updateStats();
-            } catch(e){}
-        }
-
         function createLocationIcon(l) { 
             return L.divIcon({
                 className:'', 
@@ -1095,7 +733,13 @@
             try {
                 const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
                 const res = await fetch(url);
-                if (!res.ok) throw new Error();
+                
+                // If 500 error, likely rate limit or key issue, don't retry
+                if (!res.ok) {
+                     routeCache.set(callsign, { dep: "---", arr: "---" });
+                     updateRouteUI("---", "---");
+                     return;
+                }
 
                 const json = await res.json();
 
@@ -1106,12 +750,13 @@
                     routeCache.set(callsign, { dep, arr });
                     updateRouteUI(dep, arr);
                 } else {
-                    routeCache.set(callsign, { dep: "N/A", arr: "N/A" });
-                    updateRouteUI("N/A", "N/A");
+                    routeCache.set(callsign, { dep: "---", arr: "---" });
+                    updateRouteUI("---", "---");
                 }
             } catch (e) {
-                routeCache.delete(callsign);
-                updateRouteUI("ERR", "ERR");
+                // Cache error state to prevent loop
+                routeCache.set(callsign, { dep: "---", arr: "---" });
+                updateRouteUI("---", "---");
             }
         }
 
@@ -1148,7 +793,7 @@
 
         function showInfo(type, data) {
             state.selectedItem = data.hex || data.mmsi || data.incident_number; state.isFollowing = true;
-            ['aircraft-info','vessel-info','incident-info'].forEach(id=>document.getElementById(id).style.display='none');
+            document.getElementById('aircraft-info').style.display='none';
             
             if(type==='plane') {
                 document.getElementById('ac-callsign').textContent = data.flight?.trim() || data.hex;
@@ -1163,18 +808,17 @@
                 document.getElementById('ahrs-full-display').style.display='block';
                 document.getElementById('aircraft-info').style.display='block';
                 state.map.flyTo([data.lat,data.lon], 11, {duration:0.8});
-            } else if(type==='vessel') {
-                document.getElementById('vs-name').textContent = data.name; document.getElementById('vs-type').textContent = data.type;
-                document.getElementById('vs-spd').textContent = data.speed.toFixed(1)+' kts'; document.getElementById('vs-hdg').textContent = Math.round(data.heading)+'°';
-                document.getElementById('vs-dest').textContent = data.dest||'N/A';
-                document.getElementById('vessel-info').style.display='block'; state.map.flyTo([data.lat,data.lon],13,{duration:0.8});
-            } else {
-                document.getElementById('inc-type').textContent = data.type; document.getElementById('inc-addr').textContent = data.address;
-                document.getElementById('inc-id').textContent = data.incident_number; document.getElementById('inc-time').textContent = new Date(data.datetime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-                document.getElementById('incident-info').style.display='block'; state.map.flyTo([data.latitude,data.longitude],15,{duration:0.8});
             }
             document.getElementById('info-panel').classList.add('visible');
         }
+        
+        // Global function for the Close Button
+        window.hideInfoBox = function() {
+            state.isFollowing = false; 
+            state.selectedItem = null; 
+            document.getElementById('info-panel').classList.remove('visible');
+            if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
+        };
 
         function updateAHRSDisplay(data) {
             const bank = data.pseudoBank||0; const pitch = data.pseudoPitch||0;
@@ -1184,21 +828,16 @@
             document.getElementById('ac-hdg-text').textContent = Math.round(hdg).toString().padStart(3,'0') + '°';
         }
 
-        function hideInfoBox() {
-            state.isFollowing=false; state.selectedItem=null; document.getElementById('info-panel').classList.remove('visible');
-            if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
-        }
-
         function toggleRadar() { state.isRadarOn=!state.isRadarOn; const b=document.getElementById('radar-control'); if(state.isRadarOn){layers.radar.addTo(state.map);b.classList.add('active');b.textContent='RADAR: ON';}else{layers.radar.remove();b.classList.remove('active');b.textContent='RADAR: OFF';} }
         function toggleAudio() { if(state.audioElement.paused){state.audioElement.play();document.getElementById('audio-control').classList.add('playing');document.getElementById('audio-text').textContent='ATC LIVE';}else{state.audioElement.pause();document.getElementById('audio-control').classList.remove('playing');document.getElementById('audio-text').textContent='ATC OFFLINE';} }
         function handleAudioChange(u) { const p=!state.audioElement.paused; state.audioElement.src=u; if(p)state.audioElement.play().catch(()=>{}); else {document.getElementById('audio-control').classList.remove('playing');document.getElementById('audio-text').textContent='ATC OFFLINE';} }
         function autoStartAudio() { state.audioElement.src=CONFIG.LOCATIONS[state.location].audio; state.audioElement.muted=true; state.audioElement.play().then(()=>{setTimeout(()=>{state.audioElement.muted=false;document.getElementById('audio-text').textContent='ATC LIVE';},500);document.getElementById('audio-control').classList.add('playing');}).catch(()=>{}); }
         
         function updateLocationTitle() { document.getElementById('location-title').textContent = CONFIG.LOCATIONS[state.location].name; }
-        function updateStats() { document.getElementById('aircraft-count').textContent=layers.planes.data.size; document.getElementById('vessel-count').textContent=layers.vessels.data.size; document.getElementById('incident-count').textContent=state.location==='SEA'?layers.incidents.data.size:0; }
+        function updateStats() { document.getElementById('aircraft-count').textContent=layers.planes.data.size; }
         function updateClock() { const d=new Date(); document.getElementById('current-time').textContent=`${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`; }
         
-        function startTracking() { fetchPlanes(); setInterval(fetchPlanes,3000); connectWebSocket(); fetchFireIncidents(); setInterval(fetchFireIncidents,30000); }
+        function startTracking() { fetchPlanes(); setInterval(fetchPlanes,3000); }
         
         init();
     </script>
