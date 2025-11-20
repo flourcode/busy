@@ -849,10 +849,7 @@
                 SHIPS: 'wss://ports-production-8906.up.railway.app',
                 SEATTLE_911: 'https://data.seattle.gov/resource/grwu-wqtk.json',
                 ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`,
-                AEROAPI: 'https://aeroapi.flightaware.com/aeroapi/flights/'
-            },
-            KEYS: {
-                FLIGHTAWARE: 'kKhXbycwh5FvPUieopdIn9JT180vL34s'
+                AWS_PROXY: 'https://yd7ndqoiq5.execute-api.us-east-1.amazonaws.com/default'
             },
             PATHS: {
                 PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z",
@@ -1156,7 +1153,7 @@ function setupCustomDropdown() {
         
         function createHudIcon(t,r,c,h,p=CONFIG.PATHS.PLANE) { const html=h?`<span style="color:${c};transform:rotate(${r}deg);display:inline-block;font-size:24px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">&infin;</span>`:`<svg width="24" height="24" viewBox="0 0 24 24" style="transform:rotate(${r}deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path fill="${c}" d="${p}"/></svg>`; return L.divIcon({className:'marker-icon', html, iconSize:[24,24], iconAnchor:[12,12]}); }
         function updateTrailLine(m,i,t,c) { if(t.length<2)return; if(m.has(i)) m.get(i).setLatLngs(t).setStyle({color:c, opacity:0.5, weight:2}); else m.set(i, L.polyline(t,{color:c, opacity:0.5, weight:2}).addTo(state.map)); }
-// --- ROUTE FETCHING (FLIGHTAWARE STARTER) ---
+// --- ROUTE FETCHING (AWS LAMBDA PROXY) ---
 const routeCache = new Map();
 
 async function fetchRoute(callsign) {
@@ -1178,30 +1175,19 @@ async function fetchRoute(callsign) {
         return;
     }
 
-    // 3. Fetch from FlightAware
+    // 3. Fetch from YOUR AWS Lambda
     try {
-        // 'max_pages=1' ensures we only get the most relevant flights
-        const url = `${CONFIG.URLS.AEROAPI}${callsign.trim()}?max_pages=1`;
+        // We send the callsign to your Lambda, which handles the rest
+        const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
         
-        const res = await fetch(url, {
-            headers: {
-                "x-apikey": CONFIG.KEYS.FLIGHTAWARE
-            }
-        });
+        const res = await fetch(url);
         
-        // Handle Limit Errors (429 = Too Many Requests)
-        if (res.status === 429) {
-            console.warn("FlightAware Rate Limit Exceeded (5/min)");
-            updateRouteUI("LMT", "LMT");
-            return;
-        }
-        
-        if (!res.ok) throw new Error("API Error");
+        if (!res.ok) throw new Error("AWS/API Error");
 
         const json = await res.json();
 
+        // The Lambda returns the exact JSON FlightAware gave it
         if (json.flights && json.flights.length > 0) {
-            // Find the active flight (where 'actual_on' is null means it hasn't arrived yet)
             let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
 
             const dep = flight.origin ? flight.origin.code_iata : "UNK";
@@ -1213,11 +1199,10 @@ async function fetchRoute(callsign) {
             updateRouteUI("N/A", "N/A");
         }
     } catch (e) {
-        console.warn("FlightAware Error:", e);
+        console.warn("Route Fetch Error:", e);
         updateRouteUI("ERR", "ERR");
     }
 }
-
 function updateRouteUI(dep, arr) {
     const depEl = document.getElementById('ac-route-dep');
     const arrEl = document.getElementById('ac-route-arr');
