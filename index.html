@@ -13,51 +13,30 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* =========================================================================
-           STYLE GUIDE: All Greens / Night Vision
-           Primary Accent: #a8c256 (Bright Lime)
-           Secondary:      #6b9b37 (Medium Green)
-           Tertiary:       #8ba876 (Muted Green)
-           Backgrounds:    #4a7c59 -> #0d1f19 (Light to Dark)
-           Text:           #f1f8e9 (Off White)
-        ========================================================================= */
-
         :root {
-            /* Palette Definition */
-            --g-accent-1: #a8c256; /* Critical / Active */
-            --g-accent-2: #6b9b37; /* Secondary Highlight */
-            --g-text-muted: #8ba876; /* Labels */
-            --g-text-main: #f1f8e9;  /* Off White */
-            
+            --g-accent-1: #a8c256; 
+            --g-accent-2: #6b9b37; 
+            --g-text-muted: #8ba876; 
+            --g-text-main: #f1f8e9;  
             --g-bg-1: #4a7c59;
-            --g-bg-2: #3d5e4a; /* Borders */
+            --g-bg-2: #3d5e4a; 
             --g-bg-3: #2d4a3a;
-            --g-bg-4: #1a3a2e; /* Panel BG */
-            --g-bg-5: #0d1f19; /* Deepest Background */
-
-            /* Functional Mappings */
+            --g-bg-4: #1a3a2e; 
+            --g-bg-5: #0d1f19; 
             --color-sky: #6C8075;
             --color-ground: #0d1f19;
-            
             --color-panel-bg: #1a3a2e;      
             --color-panel-border: #3d5e4a;  
             --color-text-main: var(--g-text-main);     
             --color-text-muted: var(--g-text-muted);
-            
             --color-highlight: var(--g-accent-1);         
-            
-            /* Entity Colors (All shades of green now) */
-            --color-comm: #a8c256; /* Brightest for commercial */
-            --color-ga: #6b9b37;   /* Mid-green for GA */
-            --color-mil: #f1f8e9;  /* White/Green for Mil (pop out) */
-            --color-ship: #4a7c59; /* Muted background green */
+            --color-comm: #a8c256; 
+            --color-ga: #6b9b37;   
+            --color-mil: #f1f8e9;  
+            --color-ship: #4a7c59; 
         }
 
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         html, body {
             height: 100vh; 
@@ -79,16 +58,10 @@
             background: var(--g-bg-5);
         }
         
-        /* Map Tile Filter - Night Vision Green Effect */
         .map-tiles { 
             filter: grayscale(50%) invert(100%) sepia(50%) hue-rotate(70deg) saturate(80%) brightness(0.7) contrast(1.2);
         }
-        /* Radar Filter - Force weather into green spectrum */
-        .radar-tiles { 
-           
-        }
 
-        /* --- HEADER & CONTROLS --- */
         .header-info { 
             position: fixed; 
             top: 16px; 
@@ -130,7 +103,6 @@
             gap: 10px; 
         }
 
-        /* Universal Panel Style */
         .panel-style {
             background: var(--color-panel-bg); 
             border: 1px solid var(--color-panel-border); 
@@ -145,7 +117,6 @@
             gap: 8px;
         }
 
-        /* Recenter Button Style */
         .recenter-btn {
             cursor: pointer;
             transition: all 0.2s ease;
@@ -159,43 +130,32 @@
             transform: scale(0.95);
         }
 
-        /* --- REPLACEMENT CSS --- */
+        .location-selector {
+            background-color: transparent; 
+            border: none; 
+            color: var(--g-accent-1); 
+            font-family: 'Inter', sans-serif; 
+            font-size: 13px; 
+            font-weight: 700;
+            cursor: pointer; 
+            outline: none; 
+            text-transform: uppercase; 
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 15px; 
+        }
 
-.location-selector {
-    /* Remove default system background to allow our color */
-    background-color: transparent; 
-    border: none; 
-    
-    /* Use the primary accent for the collapsed view so it pops */
-    color: var(--g-accent-1); 
-    
-    font-family: 'Inter', sans-serif; 
-    font-size: 13px; 
-    font-weight: 700;
-    cursor: pointer; 
-    outline: none; 
-    text-transform: uppercase; 
-    
-    /* Fix for Firefox/IE arrow rendering */
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    
-    /* Add some padding since we removed the arrow */
-    padding-right: 15px; 
-}
+        .location-selector option {
+            background-color: var(--g-bg-5); 
+            color: var(--g-text-main);      
+            padding: 10px;
+            font-weight: 500;
+        }
 
-/* This is the critical part for the dropdown list contrast */
-.location-selector option {
-    background-color: var(--g-bg-5); /* #0d1f19 - Deepest Green */
-    color: var(--g-text-main);       /* #f1f8e9 - Off White */
-    padding: 10px;
-    font-weight: 500;
-}
-
-.location-selector:hover {
-    text-shadow: 0 0 5px rgba(168, 194, 86, 0.5);
-}
+        .location-selector:hover {
+            text-shadow: 0 0 5px rgba(168, 194, 86, 0.5);
+        }
 
         .control-btn {
             padding: 6px 12px; 
@@ -224,7 +184,6 @@
             text-align: center;
         }
 
-        /* --- METRICS --- */
         .metrics-panel { 
             position: fixed; 
             left: 16px; 
@@ -265,7 +224,6 @@
         .metric-block.vessels { border-left-color: var(--g-bg-1); }
         .metric-block.incidents { border-left-color: var(--g-accent-2); }
 
-        /* --- LEGEND --- */
         .legend-panel {
             position: fixed;
             bottom: 20px;
@@ -290,8 +248,6 @@
         .legend-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
         .legend-item span { font-size: 11px; color: var(--g-text-main); }
 
-
-        /* --- INFO PANEL (HUD STYLE) --- */
         .info-panel {
             position: fixed; 
             bottom: 20px; 
@@ -308,7 +264,7 @@
             transition: opacity 0.3s ease;
             border-radius: 12px; 
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
         .info-panel.visible { 
@@ -316,7 +272,6 @@
             pointer-events: all; 
         }
 
-        /* PFD Data Overlay */
         .pfd-data-overlay {
             position: absolute; 
             top: 0; 
@@ -336,35 +291,31 @@
             font-weight: 700; 
             color: var(--g-text-main); 
             line-height: 1;
-            padding: 8px;
-            background-color: rgba(13, 31, 25, 0.6);
-            border: 1px solid var(--g-bg-3);
+            padding: 2px;
+            
         }
         .info-subtitle { 
             font-family: 'Share Tech Mono', monospace; 
-            font-size: 18px; 
-			font-weight: 700;
-            color: var(--g-accent-1); 
+            font-size: 14px; 
+            font-weight: 700;
+            color: var(--g-text-main); 
             letter-spacing: 1px; 
             text-transform: uppercase; 
             margin-top: 2px; 
-            padding: 8px;
-            background-color: rgba(13, 31, 25, 0.6);
-            border: 1px solid var(--g-bg-3);
+            padding: 2px;        
             border-top: none;
         }
         
         .info-reg {
             font-family: 'Share Tech Mono', monospace; 
             font-size: 14px; 
-            color: var(--g-text-muted); 
+			font-weight: 700;
+            color: var(--g-text-main); 
             letter-spacing: 1px; 
             text-transform: uppercase; 
             margin-top: 2px; 
-			padding: 8px;
-            background-color: rgba(13, 31, 25, 0.6);
-            border: 1px solid var(--g-bg-3);
-            border-top: none;
+            padding: 2px;
+           
         }
         
         .pfd-heading-box { text-align: right; }
@@ -374,12 +325,10 @@
             font-weight: 700; 
             color: var(--g-text-main); 
             line-height: 1; 
-            padding: 8px;
-            background-color: rgba(13, 31, 25, 0.6);
-            border: 1px solid var(--g-bg-3);
+            padding: 2px;
+           
         }
 
-        /* Bottom Stats Row */
         .info-stats-container {
             position: absolute;
             bottom: 0;
@@ -418,7 +367,6 @@
             text-transform: uppercase; 
         }
 
-        /* --- ARTIFICIAL HORIZON (GREEN THEME) --- */
         #ahrs-full-display {
             position: absolute; 
             top: 0; 
@@ -480,7 +428,6 @@
             pointer-events: none; 
         }
 
-        /* --- TARGET RETICLE --- */
         .target-reticle-icon { 
             pointer-events: none; 
             display: flex; 
@@ -504,7 +451,6 @@
             100% { transform: scale(0.9); opacity: 0.6; }
         }
 
-        /* --- FOOTER CONTROLS --- */
         .audio-control { 
             position: fixed; 
             bottom: 20px; 
@@ -530,146 +476,142 @@
             .legend-panel { display: none; }
             .info-panel { width: 95%; bottom: 12px; height: 250px; }
         }
-		/* --- CUSTOM DROPDOWN STYLING --- */
-.custom-select-wrapper {
-    position: relative;
-    user-select: none;
-    width: 150px; /* Adjust width as needed */
-    font-family: 'Share Tech Mono', monospace;
-}
+        
+        .custom-select-wrapper {
+            position: relative;
+            user-select: none;
+            width: 150px; 
+            font-family: 'Share Tech Mono', monospace;
+        }
 
-.custom-select {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
+        .custom-select {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
 
-.custom-select__trigger {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--g-accent-1); /* Bright Lime Text */
-    line-height: 20px;
-    background: transparent;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.2s;
-}
+        .custom-select__trigger {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--g-accent-1); 
+            line-height: 20px;
+            background: transparent;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
 
-.custom-select__trigger:hover {
-    text-shadow: 0 0 8px rgba(168, 194, 86, 0.6);
-}
+        .custom-select__trigger:hover {
+            text-shadow: 0 0 8px rgba(168, 194, 86, 0.6);
+        }
 
-/* The Arrow */
-.arrow {
-    position: relative;
-    height: 10px;
-    width: 10px;
-    margin-left: 10px;
-}
-.arrow::after {
-    content: "";
-    position: absolute;
-    top: 3px;
-    border: solid var(--g-text-muted);
-    border-width: 0 2px 2px 0;
-    padding: 3px;
-    transform: rotate(45deg);
-    transition: 0.2s;
-}
-.custom-select.open .arrow::after {
-    transform: rotate(-135deg);
-    border-color: var(--g-accent-1);
-}
+        .arrow {
+            position: relative;
+            height: 10px;
+            width: 10px;
+            margin-left: 10px;
+        }
+        .arrow::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            border: solid var(--g-text-muted);
+            border-width: 0 2px 2px 0;
+            padding: 3px;
+            transform: rotate(45deg);
+            transition: 0.2s;
+        }
+        .custom-select.open .arrow::after {
+            transform: rotate(-135deg);
+            border-color: var(--g-accent-1);
+        }
 
-/* The Dropdown Menu */
-.custom-options {
-    position: absolute;
-    display: block;
-    top: 100%;
-    left: 0;
-    right: 0;
-    border: 1px solid var(--color-panel-border);
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
-    background: var(--g-bg-4); /* #1a3a2e */
-    transition: all 0.2s;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    z-index: 2000;
-    margin-top: 8px;
-}
+        .custom-options {
+            position: absolute;
+            display: block;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--color-panel-border);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+            background: var(--g-bg-4); 
+            transition: all 0.2s;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            z-index: 2000;
+            margin-top: 8px;
+        }
 
-.custom-select.open .custom-options {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: all;
-}
+        .custom-select.open .custom-options {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
 
-/* The Options */
-.custom-option {
-    position: relative;
-    display: block;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--g-text-main); /* Off White */
-    cursor: pointer;
-    transition: all 0.1s;
-    border-bottom: 1px solid var(--g-bg-2); /* Separator line */
-}
+        .custom-option {
+            position: relative;
+            display: block;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--g-text-main); 
+            cursor: pointer;
+            transition: all 0.1s;
+            border-bottom: 1px solid var(--g-bg-2); 
+        }
 
-.custom-option:last-of-type {
-    border-bottom: none;
-}
+        .custom-option:last-of-type {
+            border-bottom: none;
+        }
 
-/* HOVER STATE: High Contrast Green */
-.custom-option:hover,
-.custom-option.selected {
-    background-color: var(--g-accent-1); /* Bright Lime Background */
-    color: var(--g-bg-5);                /* Darkest Green Text */
-    font-weight: 700;
-}
-/* --- ROUTE OVERLAY --- */
-.pfd-route-overlay {
-    position: absolute;
-    top: 16px; /* Positioned below the top data blocks */
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 25;
-}
+        .custom-option:hover,
+        .custom-option.selected {
+            background-color: var(--g-accent-1); 
+            color: var(--g-bg-5);                
+            font-weight: 700;
+        }
+        
+        .pfd-route-overlay {
+            position: absolute;
+            top: 16px; 
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 25;
+        }
 
-.route-box {
-    background-color: rgba(13, 31, 25, 0.8);
-    border: 1px solid var(--g-bg-2);
-    padding: 6px 16px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    backdrop-filter: blur(2px);
-}
+        .route-box {
+            background-color: rgba(13, 31, 25, 0.4);
+            border: 1px solid var(--g-bg-2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(2px);
+        }
 
-#ac-route-dep, #ac-route-arr {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--g-accent-1); /* Bright Lime */
-    text-shadow: 0 0 8px rgba(168, 194, 86, 0.4);
-}
+        #ac-route-dep, #ac-route-arr {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--g-accent-1); 
+            text-shadow: 0 0 8px rgba(168, 194, 86, 0.4);
+        }
 
-.route-arrow {
-    font-size: 18px;
-    color: var(--g-text-muted);
-}
+        .route-arrow {
+            font-size: 18px;
+            color: var(--g-text-muted);
+        }
     </style>
 </head>
 <body>
@@ -765,13 +707,13 @@
                     <div><span class="hdg-label"></span><span class="hdg-value" id="ac-hdg-text">000°</span></div>
                 </div>
             </div>
-<div class="pfd-route-overlay">
-    <div class="route-box">
-        <span id="ac-route-dep">---</span>
-        <span class="route-arrow">➔</span>
-        <span id="ac-route-arr">---</span>
-    </div>
-</div>
+            <div class="pfd-route-overlay">
+                <div class="route-box">
+                    <span id="ac-route-dep">---</span>
+                    <span class="route-arrow">➔</span>
+                    <span id="ac-route-arr">---</span>
+                </div>
+            </div>
             <div class="info-stats-container">
                 <div class="info-stats">
                     <div class="info-stat">
@@ -839,9 +781,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // =========================================================================
-        // CONFIGURATION
-        // =========================================================================
         const CONFIG = {
             URLS: {
                 MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -862,22 +801,21 @@
                 ATL: { name: 'ATL', lat: 33.6407, lon: -84.4277, zoom: 11, audio: 'https://d.liveatc.net/katl_twr', bbox: [[33.5, -84.6], [33.8, -84.2]] },
                 MIA: { name: 'MIA', lat: 25.7959, lon: -80.2870, zoom: 11, audio: 'https://d.liveatc.net/kmia3_gnd', bbox: [[25.7, -80.3], [25.9, -80.1]] },
                 DEN: { name: 'DEN', lat: 39.8561, lon: -104.6737, zoom: 11, audio: 'https://d.liveatc.net/kden1_6', bbox: [[39.8, -104.8], [40.0, -104.5]] },
-                ORD: { name: 'ORD', lat: 41.9742, lon: -87.9073, zoom: 11, audio: 'https://d.liveatc.net/kord1n2_app_133625', bbox: [[41.8, -87.6], [42.0, -87.5]] },
+                ORD: { name: 'ORD', lat: 41.9742, lon: -87.9073, zoom: 11, audio: 'https://d.liveatc.net/kord1n2_app_133625', bbox: [[41.8, -87.6], [41.99, -87.5]] },
                 LAX: { name: 'LAX', lat: 33.9416, lon: -118.4085, zoom: 11, audio: 'https://d.liveatc.net/klax4', bbox: [[33.7, -118.5], [34.0, -118.3]] }
             },
-            // Updated Colors for Green Palette
             COLORS: {
-                COMM: '#a8c256', // Primary Accent
-                GA: '#6b9b37',   // Secondary Green
-                MIL: '#f1f8e9',  // White (Pop out)
-                HELI: '#8ba876', // Tertiary Green
-                OTHER: '#3d5e4a', // Dark Green
+                COMM: '#a8c256', 
+                GA: '#6b9b37',   
+                MIL: '#f1f8e9',  
+                HELI: '#8ba876', 
+                OTHER: '#3d5e4a', 
                 TUG: '#4a7c59',
                 PILOT: '#4a7c59',
                 SHIP: '#4a7c59'
             }
         };
-        // --- DATA DICTIONARY ---
+        
         const AIRCRAFT_TYPES = {
             "B737": "Boeing 737-700", "B738": "Boeing 737-800", "B739": "Boeing 737-900", "B38M": "Boeing 737 MAX 8", "B39M": "Boeing 737 MAX 9",
             "B772": "Boeing 777-200", "B77W": "Boeing 777-300ER", "B788": "Boeing 787-8", "B789": "Boeing 787-9", "B744": "Boeing 747-400",
@@ -887,7 +825,6 @@
             "C172": "Cessna 172", "SR22": "Cirrus SR22", "PC12": "Pilatus PC-12", "C208": "Cessna Caravan"
         };
 
-        // STATE
         const state = {
             location: 'JFK', map: null, isRadarOn: true, selectedItem: null, isFollowing: false,
             socket: null, reconnectTimer: null, audioElement: document.getElementById('audio')
@@ -900,16 +837,15 @@
         };
 
         function init() {
-    // Line deleted here
-    updateLocationTitle();
-    initMap();
-    if(state.isRadarOn) initializeRadarOn();
-    startTracking();
-    setupEventListeners();
-    updateClock(); setInterval(updateClock, 1000);
-    autoStartAudio();
-    setupCustomDropdown();
-}
+            updateLocationTitle();
+            initMap();
+            if(state.isRadarOn) initializeRadarOn();
+            startTracking();
+            setupEventListeners();
+            updateClock(); setInterval(updateClock, 1000);
+            autoStartAudio();
+            setupCustomDropdown();
+        }
 
         function initMap() {
             const loc = CONFIG.LOCATIONS[state.location];
@@ -922,66 +858,55 @@
         function initializeRadarOn() { layers.radar.addTo(state.map); document.getElementById('radar-control').classList.add('active'); }
 
         function setupEventListeners() {
-    document.getElementById('audio-control').addEventListener('click', toggleAudio);
-    document.getElementById('radar-control').addEventListener('click', toggleRadar);
-    // Line deleted here
-    
-    document.getElementById('recenter-btn').addEventListener('click', recenterView);
-    
-    state.map.on('click', (e) => {
-        if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
-        const wasFollowing = state.isFollowing || state.selectedItem;
-        hideInfoBox();
-        if (wasFollowing) recenterView();
-        if (state.audioElement.paused) {
-            state.audioElement.muted = false;
-            state.audioElement.play().then(()=>{ 
-                document.getElementById('audio-control').classList.add('playing'); 
-                document.getElementById('audio-text').textContent='ATC LIVE'; 
-            }).catch(()=>{});
-        }
-    });
-}
-
-
-function setupCustomDropdown() {
-    const wrapper = document.querySelector('.custom-select-wrapper');
-    const select = wrapper.querySelector('.custom-select');
-    const trigger = wrapper.querySelector('.custom-select__trigger');
-    const options = wrapper.querySelectorAll('.custom-option');
-    const selectedText = document.getElementById('selected-text');
-
-    // Toggle Menu
-    trigger.addEventListener('click', (e) => {
-        select.classList.toggle('open');
-        e.stopPropagation(); // Prevent immediate close
-    });
-
-    // Handle Selection
-    options.forEach(option => {
-        option.addEventListener('click', function() {
-            // Visual update
-            wrapper.querySelector('.custom-option.selected').classList.remove('selected');
-            this.classList.add('selected');
-            selectedText.textContent = this.textContent;
+            document.getElementById('audio-control').addEventListener('click', toggleAudio);
+            document.getElementById('radar-control').addEventListener('click', toggleRadar);
             
-            // Close menu
-            select.classList.remove('open');
+            document.getElementById('recenter-btn').addEventListener('click', recenterView);
             
-            // TRIGGER THE ACTUAL MAP CHANGE
-            const value = this.getAttribute('data-value');
-            changeLocation(value); 
-        });
-    });
-
-    // Close menu when clicking outside
-    window.addEventListener('click', (e) => {
-        if (!select.contains(e.target)) {
-            select.classList.remove('open');
+            state.map.on('click', (e) => {
+                if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
+                const wasFollowing = state.isFollowing || state.selectedItem;
+                hideInfoBox();
+                if (wasFollowing) recenterView();
+                if (state.audioElement.paused) {
+                    state.audioElement.muted = false;
+                    state.audioElement.play().then(()=>{ 
+                        document.getElementById('audio-control').classList.add('playing'); 
+                        document.getElementById('audio-text').textContent='ATC LIVE'; 
+                    }).catch(()=>{});
+                }
+            });
         }
-    });
-}
 
+        function setupCustomDropdown() {
+            const wrapper = document.querySelector('.custom-select-wrapper');
+            const select = wrapper.querySelector('.custom-select');
+            const trigger = wrapper.querySelector('.custom-select__trigger');
+            const options = wrapper.querySelectorAll('.custom-option');
+            const selectedText = document.getElementById('selected-text');
+
+            trigger.addEventListener('click', (e) => {
+                select.classList.toggle('open');
+                e.stopPropagation(); 
+            });
+
+            options.forEach(option => {
+                option.addEventListener('click', function() {
+                    wrapper.querySelector('.custom-option.selected').classList.remove('selected');
+                    this.classList.add('selected');
+                    selectedText.textContent = this.textContent;
+                    select.classList.remove('open');
+                    const value = this.getAttribute('data-value');
+                    changeLocation(value); 
+                });
+            });
+
+            window.addEventListener('click', (e) => {
+                if (!select.contains(e.target)) {
+                    select.classList.remove('open');
+                }
+            });
+        }
 
         function recenterView() {
             state.isFollowing = false; 
@@ -1023,7 +948,6 @@ function setupCustomDropdown() {
             updateStats();
         }
 
-        // FETCH AIRCRAFT
         async function fetchPlanes() {
             try {
                 const l = CONFIG.LOCATIONS[state.location];
@@ -1035,7 +959,6 @@ function setupCustomDropdown() {
                     if(!ac.lat || !ac.lon) return;
                     active.add(ac.hex);
                     
-                    // Physics
                     const old = layers.planes.data.get(ac.hex);
                     let bank=0; if(old && old.track!==undefined && ac.track!==undefined) {
                         let d = ac.track - old.track; if(d>180)d-=360; if(d<-180)d+=360;
@@ -1049,13 +972,12 @@ function setupCustomDropdown() {
                     
                     layers.planes.data.set(ac.hex, ac);
                     
-                    // Trail
                     if(!layers.planes.trails.has(ac.hex)) layers.planes.trails.set(ac.hex,[]);
                     const t = layers.planes.trails.get(ac.hex); t.push([ac.lat,ac.lon]); if(t.length>100)t.shift();
 
                     updatePlaneMarker(ac, t);
                     if(state.selectedItem===ac.hex && state.isFollowing) {
-                        updateAHRSDisplay(ac); showInfo('plane', ac);
+                        updateHUD(ac);
                     }
                 });
                 layers.planes.markers.forEach((_,h)=>{
@@ -1068,6 +990,7 @@ function setupCustomDropdown() {
                 updateStats();
             } catch(e){}
         }
+
         function updatePlaneMarker(ac, trail) {
             if(state.selectedItem===ac.hex && state.isFollowing) {
                 state.map.panTo([ac.lat,ac.lon]);
@@ -1092,14 +1015,12 @@ function setupCustomDropdown() {
             updateTrailLine(layers.planes.lines, ac.hex, trail, col);
         }
 
-        // RETICLE
         function createReticle(lat, lon) {
             if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
             const icon = L.divIcon({className:'target-reticle-icon', html:'<div class="reticle-ring"></div>', iconSize:[60,60], iconAnchor:[30,30]});
             layers.reticle = L.marker([lat,lon],{icon, zIndexOffset:1000}).addTo(state.map);
         }
 
-        // WEBSOCKET & OTHERS
         function connectWebSocket() {
             state.socket = new WebSocket(CONFIG.URLS.SHIPS);
             state.socket.onopen = () => { setTimeout(subscribeToShips,2000); };
@@ -1116,7 +1037,6 @@ function setupCustomDropdown() {
             if(v.lat) {
                 if(!layers.vessels.trails.has(m.MMSI)) layers.vessels.trails.set(m.MMSI,[]);
                 const t=layers.vessels.trails.get(m.MMSI); t.push([v.lat,v.lon]); if(t.length>100)t.shift();
-                // Use Ship Color
                 let col=CONFIG.COLORS.SHIP; 
                 const icon=createHudIcon('ship', v.heading, col, false, CONFIG.PATHS.SHIP);
                 if(layers.vessels.markers.has(m.MMSI)) layers.vessels.markers.get(m.MMSI).setLatLng([v.lat,v.lon]).setIcon(icon);
@@ -1140,78 +1060,91 @@ function setupCustomDropdown() {
             } catch(e){}
         }
 
-        // UI & UTILS
         function createLocationIcon(l) { 
-    return L.divIcon({
-        className:'', 
-        // Added 'width:max-content' to the style below
-        html:`<div style="background:#a8c256; color:#0d1f19; font-weight:700; font-size:10px; padding:2px 6px; border-radius:4px; white-space:nowrap; width:max-content; transform:translate(-50%, -20px); text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.6); border:1px solid #0d1f19;">${l}</div><div style="width:12px; height:12px; background:#a8c256; border:2px solid #0d1f19; border-radius:50%; box-shadow:0 0 5px rgba(168,194,86,0.5);"></div>`, 
-        iconSize:[0,0], 
-        iconAnchor:[6,6]
-    }); 
-}
+            return L.divIcon({
+                className:'', 
+                html:`<div style="background:#a8c256; color:#0d1f19; font-weight:700; font-size:10px; padding:2px 6px; border-radius:4px; white-space:nowrap; width:max-content; transform:translate(-50%, -20px); text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.6); border:1px solid #0d1f19;">${l}</div><div style="width:12px; height:12px; background:#a8c256; border:2px solid #0d1f19; border-radius:50%; box-shadow:0 0 5px rgba(168,194,86,0.5);"></div>`, 
+                iconSize:[0,0], 
+                iconAnchor:[6,6]
+            }); 
+        }
         
         function createHudIcon(t,r,c,h,p=CONFIG.PATHS.PLANE) { const html=h?`<span style="color:${c};transform:rotate(${r}deg);display:inline-block;font-size:24px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">&infin;</span>`:`<svg width="24" height="24" viewBox="0 0 24 24" style="transform:rotate(${r}deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));"><path fill="${c}" d="${p}"/></svg>`; return L.divIcon({className:'marker-icon', html, iconSize:[24,24], iconAnchor:[12,12]}); }
         function updateTrailLine(m,i,t,c) { if(t.length<2)return; if(m.has(i)) m.get(i).setLatLngs(t).setStyle({color:c, opacity:0.5, weight:2}); else m.set(i, L.polyline(t,{color:c, opacity:0.5, weight:2}).addTo(state.map)); }
-// --- ROUTE FETCHING (AWS LAMBDA PROXY) ---
-const routeCache = new Map();
 
-async function fetchRoute(callsign) {
-    const depEl = document.getElementById('ac-route-dep');
-    const arrEl = document.getElementById('ac-route-arr');
+        const routeCache = new Map();
 
-    // 1. Reset UI
-    depEl.textContent = "???";
-    arrEl.textContent = "???";
-    depEl.style.opacity = "0.5";
-    arrEl.style.opacity = "0.5";
+        async function fetchRoute(callsign) {
+            const depEl = document.getElementById('ac-route-dep');
+            const arrEl = document.getElementById('ac-route-arr');
 
-    if (!callsign) return;
+            if (!callsign) return;
 
-    // 2. Check Cache
-    if (routeCache.has(callsign)) {
-        const data = routeCache.get(callsign);
-        updateRouteUI(data.dep, data.arr);
-        return;
-    }
+            if (routeCache.has(callsign)) {
+                const data = routeCache.get(callsign);
+                if (data !== "PENDING") updateRouteUI(data.dep, data.arr);
+                return;
+            }
 
-    // 3. Fetch from YOUR AWS Lambda
-    try {
-        // We send the callsign to your Lambda, which handles the rest
-        const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
-        
-        const res = await fetch(url);
-        
-        if (!res.ok) throw new Error("AWS/API Error");
+            routeCache.set(callsign, "PENDING");
+            depEl.textContent = "???";
+            arrEl.textContent = "???";
+            depEl.style.opacity = "0.5";
+            arrEl.style.opacity = "0.5";
 
-        const json = await res.json();
+            try {
+                const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error();
 
-        // The Lambda returns the exact JSON FlightAware gave it
-        if (json.flights && json.flights.length > 0) {
-            let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
+                const json = await res.json();
 
-            const dep = flight.origin ? flight.origin.code_iata : "UNK";
-            const arr = flight.destination ? flight.destination.code_iata : "UNK";
-            
-            routeCache.set(callsign, { dep, arr });
-            updateRouteUI(dep, arr);
-        } else {
-            updateRouteUI("N/A", "N/A");
+                if (json.flights && json.flights.length > 0) {
+                    let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
+                    const dep = flight.origin ? flight.origin.code_iata : "UNK";
+                    const arr = flight.destination ? flight.destination.code_iata : "UNK";
+                    routeCache.set(callsign, { dep, arr });
+                    updateRouteUI(dep, arr);
+                } else {
+                    routeCache.set(callsign, { dep: "N/A", arr: "N/A" });
+                    updateRouteUI("N/A", "N/A");
+                }
+            } catch (e) {
+                routeCache.delete(callsign);
+                updateRouteUI("ERR", "ERR");
+            }
         }
-    } catch (e) {
-        console.warn("Route Fetch Error:", e);
-        updateRouteUI("ERR", "ERR");
-    }
-}
-function updateRouteUI(dep, arr) {
-    const depEl = document.getElementById('ac-route-dep');
-    const arrEl = document.getElementById('ac-route-arr');
-    
-    depEl.textContent = dep;
-    arrEl.textContent = arr;
-    depEl.style.opacity = "1";
-    arrEl.style.opacity = "1";
-}
+
+        function updateRouteUI(dep, arr) {
+            const depEl = document.getElementById('ac-route-dep');
+            const arrEl = document.getElementById('ac-route-arr');
+            
+            depEl.textContent = dep;
+            arrEl.textContent = arr;
+            depEl.style.opacity = "1";
+            arrEl.style.opacity = "1";
+        }
+
+        function updateHUD(data) {
+            document.getElementById('ac-alt').textContent = (data.alt_baro||0).toLocaleString() + ' ft';
+            document.getElementById('ac-spd').textContent = Math.round((data.gs||0)*1.15) + ' mph';
+            
+            const vs = data.baro_rate || 0; 
+            const alt = typeof data.alt_baro === 'number' ? data.alt_baro : 0;
+            let status = "CRUISING";
+
+            if(data.alt_baro === "ground") {
+                status = "TAXI/GND";
+            } else if (vs > 300) {
+                status = alt < 2000 ? "TAKEOFF" : "CLIMBING";
+            } else if (vs < -300) {
+                if (alt < 800) status = "LANDING";
+                else if (alt < 4000) status = "APPROACH";
+                else status = "DESCENDING";
+            }
+            document.getElementById('ac-stat').textContent = status;
+            updateAHRSDisplay(data);
+        }
 
         function showInfo(type, data) {
             state.selectedItem = data.hex || data.mmsi || data.incident_number; state.isFollowing = true;
@@ -1223,26 +1156,10 @@ function updateRouteUI(dep, arr) {
                 document.getElementById('ac-type').textContent = AIRCRAFT_TYPES[rawType] || rawType;
                 
                 document.getElementById('ac-reg').textContent = data.r || ''; 
-				fetchRoute(data.flight ? data.flight.trim() : null);
-                document.getElementById('ac-alt').textContent = (data.alt_baro||0).toLocaleString() + ' ft';
-                document.getElementById('ac-spd').textContent = Math.round((data.gs||0)*1.15) + ' mph';
+                fetchRoute(data.flight ? data.flight.trim() : null);
                 
-                const vs = data.baro_rate || 0; 
-                const alt = typeof data.alt_baro === 'number' ? data.alt_baro : 0;
-                let status = "CRUISING";
-
-                if(data.alt_baro === "ground") {
-                    status = "TAXI/GND";
-                } else if (vs > 300) {
-                    status = alt < 2000 ? "TAKEOFF" : "CLIMBING";
-                } else if (vs < -300) {
-                    if (alt < 800) status = "LANDING";
-                    else if (alt < 4000) status = "APPROACH";
-                    else status = "DESCENDING";
-                }
-                document.getElementById('ac-stat').textContent = status;
+                updateHUD(data);
                 
-                updateAHRSDisplay(data);
                 document.getElementById('ahrs-full-display').style.display='block';
                 document.getElementById('aircraft-info').style.display='block';
                 state.map.flyTo([data.lat,data.lon], 11, {duration:0.8});
