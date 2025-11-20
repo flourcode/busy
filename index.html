@@ -448,6 +448,51 @@
         }
         .info-panel.visible { transform: translateY(0); }
     }
+	/* Update your .route-box to align items to the center */
+.route-box {
+    background-color: rgba(13, 31, 25, 0.6); /* Slightly darker for readability */
+    border: 1px solid var(--g-bg-2);
+    padding: 4px 16px; 
+    border-radius: 20px; 
+    display: flex; 
+    align-items: center; 
+    gap: 16px; 
+    backdrop-filter: blur(4px);
+}
+
+/* New container for the vertical stack (Code + City) */
+.route-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+}
+
+/* The big IATA Code (JFK) */
+.route-code {
+    font-family: 'Share Tech Mono', monospace; 
+    font-size: 18px; 
+    font-weight: 700; 
+    color: var(--g-accent-1); 
+    text-shadow: 0 0 8px rgba(168, 194, 86, 0.4);
+}
+
+/* The small City Name (NEW YORK) */
+.route-city {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--g-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.route-arrow { 
+    font-size: 14px; 
+    color: var(--g-text-muted); 
+    opacity: 0.7;
+}
 </style>
 </head>
 <body>
@@ -548,12 +593,18 @@
                 </div>
             </div>
             <div class="pfd-route-overlay">
-                <div class="route-box">
-                    <span id="ac-route-dep">---</span>
-                    <span class="route-arrow">➔</span>
-                    <span id="ac-route-arr">---</span>
-                </div>
-            </div>
+    <div class="route-box">
+        <div class="route-group">
+            <span id="ac-route-dep" class="route-code">---</span>
+            <span id="city-dep" class="route-city"></span>
+        </div>
+        <span class="route-arrow">➔</span>
+        <div class="route-group">
+            <span id="ac-route-arr" class="route-code">---</span>
+            <span id="city-arr" class="route-city"></span>
+        </div>
+    </div>
+</div>
             <div class="info-stats-container">
                 <div class="info-stats">
                     <div class="info-stat">
@@ -862,27 +913,38 @@
                     let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
                     const dep = flight.origin ? flight.origin.code_iata : "UNK";
                     const arr = flight.destination ? flight.destination.code_iata : "UNK";
-                    routeCache.set(callsign, { dep, arr });
-                    updateRouteUI(dep, arr);
-                } else {
-                    routeCache.set(callsign, { dep: "---", arr: "---" });
-                    updateRouteUI("---", "---");
-                }
-            } catch (e) {
-                routeCache.set(callsign, { dep: "---", arr: "---" });
-                updateRouteUI("---", "---");
-            }
-        }
+                    const depCity = flight.origin ? flight.origin.city : ""; 
+            const arrCity = flight.destination ? flight.destination.city : "";
 
-        function updateRouteUI(dep, arr) {
-            const depEl = document.getElementById('ac-route-dep');
-            const arrEl = document.getElementById('ac-route-arr');
+            const routeData = { dep, arr, depCity, arrCity };
+            routeCache.set(callsign, routeData);
             
-            depEl.textContent = dep;
-            arrEl.textContent = arr;
-            depEl.style.opacity = "1";
-            arrEl.style.opacity = "1";
+            updateRouteUI(dep, arr, depCity, arrCity);
+        } else {
+            throw new Error("No flights found");
         }
+    } catch (e) {
+        routeCache.set(callsign, { dep: "---", arr: "---" });
+        updateRouteUI("---", "---");
+    }
+}
+
+        function updateRouteUI(dep, arr, apiDepCity, apiArrCity) {
+    const depEl = document.getElementById('ac-route-dep');
+    const arrEl = document.getElementById('ac-route-arr');
+    const depCityEl = document.getElementById('city-dep'); // Requires the HTML/CSS from previous step
+    const arrCityEl = document.getElementById('city-arr');
+    
+    depEl.textContent = dep;
+    arrEl.textContent = arr;
+    
+    // LOGIC: Use API city if available. If not, check the hardcoded list.
+    depCityEl.textContent = apiDepCity || AIRPORT_CITIES[dep] || "";
+    arrCityEl.textContent = apiArrCity || AIRPORT_CITIES[arr] || "";
+    
+    depEl.style.opacity = "1";
+    arrEl.style.opacity = "1";
+}
 
         function updateHUD(data) {
             document.getElementById('ac-alt').textContent = (data.alt_baro||0).toLocaleString() + ' ft';
