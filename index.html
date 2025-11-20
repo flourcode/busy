@@ -673,7 +673,9 @@
         const layers = {
             base: null, radar: null,
             planes: { markers: new Map(), trails: new Map(), lines: new Map(), data: new Map() },
-            overlays: [], reticle: null
+            overlays: [], 
+			reticle: null,
+			flightPath: null
         };
 
         function init() {
@@ -786,7 +788,8 @@
             
             if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
             updateStats();
-        }
+			if (layers.flightPath) { state.map.removeLayer(layers.flightPath); layers.flightPath = null; }
+}
 
         async function fetchPlanes() {
             try {
@@ -879,53 +882,56 @@
 
         const routeCache = new Map();
 
-        async function fetchRoute(callsign) {
-            const depEl = document.getElementById('ac-route-dep');
-            const arrEl = document.getElementById('ac-route-arr');
+        // UPDATED: Accepts currentLat/currentLon to draw the line
+async function fetchRoute(callsign, currentLat, currentLon) {
+    const depEl = document.getElementById('ac-route-dep');
+    const arrEl = document.getElementById('ac-route-arr');
+    const depCityEl = document.getElementById('city-dep'); 
+    const arrCityEl = document.getElementById('city-arr');
 
-            if (!callsign) return;
+    if (!callsign) return;
 
-            if (routeCache.has(callsign)) {
-                const data = routeCache.get(callsign);
-                if (data !== "PENDING") updateRouteUI(data.dep, data.arr);
-                return;
-            }
+    // (Optional: Keep your cache check here if you want)
 
-            routeCache.set(callsign, "PENDING");
-            depEl.textContent = "???";
-            arrEl.textContent = "???";
-            depEl.style.opacity = "0.5";
-            arrEl.style.opacity = "0.5";
+    try {
+        const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
+        const res = await fetch(url);
+        
+        if (!res.ok) throw new Error("API Error");
 
-            try {
-                const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
-                const res = await fetch(url);
-                
-                if (!res.ok) {
-                     routeCache.set(callsign, { dep: "---", arr: "---" });
-                     updateRouteUI("---", "---");
-                     return;
-                }
+        const json = await res.json();
 
-                const json = await res.json();
+        if (json.flights && json.flights.length > 0) {
+            // Get the most relevant flight segment
+            let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
 
-                if (json.flights && json.flights.length > 0) {
-                    let flight = json.flights.find(f => !f.actual_on) || json.flights[0];
-                    const dep = flight.origin ? flight.origin.code_iata : "UNK";
-                    const arr = flight.destination ? flight.destination.code_iata : "UNK";
-                    const depCity = flight.origin ? flight.origin.city : ""; 
+            // 1. Get Codes
+            const dep = flight.origin ? flight.origin.code_iata : "UNK";
+            const arr = flight.destination ? flight.destination.code_iata : "UNK";
+            
+            // 2. Get City Names (Live from API)
+            const depCity = flight.origin ? flight.origin.city : ""; 
             const arrCity = flight.destination ? flight.destination.city : "";
 
-            const routeData = { dep, arr, depCity, arrCity };
-            routeCache.set(callsign, routeData);
-            
+            // 3. GET COORDINATES & DRAW LINE (The New Part)
+            const destLat = flight.destination ? flight.destination.latitude : null;
+            const destLon = flight.destination ? flight.destination.longitude : null;
+
+            if (destLat && destLon) {
+                drawMagentaLine(currentLat, currentLon, destLat, destLon);
+            }
+
+            // 4. Update UI
             updateRouteUI(dep, arr, depCity, arrCity);
+            
+            // Update Cache
+            routeCache.set(callsign, { dep, arr, depCity, arrCity }); // Simplify cache for UI only
         } else {
             throw new Error("No flights found");
         }
     } catch (e) {
-        routeCache.set(callsign, { dep: "---", arr: "---" });
-        updateRouteUI("---", "---");
+        // Error State
+        updateRouteUI("---", "---", "", "");
     }
 }
 
@@ -945,6 +951,32 @@
     depEl.style.opacity = "1";
     arrEl.style.opacity = "1";
 }
+function drawMagentaLine(planeLat, planeLon, destLat, destLon) {
+    // 1. Clear existing path if one exists
+    if (layers.flightPath) {
+        state.map.removeLayer(layers.flightPath);
+        layers.flightPath = null;
+    }
+
+    // 2. Safety Check: Ensure we have all coordinates
+    if (!planeLat || !planeLon || !destLat || !destLon) return;
+
+    // 3. Define path points (Current Pos -> Dest Pos)
+    const pathPoints = [
+        [planeLat, planeLon],
+        [destLat, destLon]
+    ];
+
+    // 4. Create the dashed Magenta Line
+    layers.flightPath = L.polyline(pathPoints, {
+        color: '#FF00FF',       // Standard Aviation Magenta
+        weight: 2,
+        opacity: 0.8,
+        dashArray: '8, 8',      // Tactical dashed effect
+        lineCap: 'butt'
+    }).addTo(state.map);
+}
+
 
         function updateHUD(data) {
             document.getElementById('ac-alt').textContent = (data.alt_baro||0).toLocaleString() + ' ft';
@@ -997,7 +1029,7 @@ function getOffsetCenter(lat, lon, targetZoom) {
                 document.getElementById('ac-type').textContent = AIRCRAFT_TYPES[rawType] || rawType;
                 
                 document.getElementById('ac-reg').textContent = data.r || ''; 
-                fetchRoute(data.flight ? data.flight.trim() : null);
+                fetchRoute(data.flight ? data.flight.trim() : null, data.lat, data.lon);
                 
                 updateHUD(data);
                 
@@ -1015,7 +1047,8 @@ state.map.flyTo(center, 11, {duration:0.8});
             state.selectedItem = null; 
             document.getElementById('info-panel').classList.remove('visible');
             if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
-        }
+        if (layers.flightPath) { state.map.removeLayer(layers.flightPath); layers.flightPath = null; }
+}
 
         function updateAHRSDisplay(data) {
             const bank = data.pseudoBank||0; const pitch = data.pseudoPitch||0;
