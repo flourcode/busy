@@ -61,7 +61,6 @@
             filter: grayscale(50%) invert(100%) sepia(50%) hue-rotate(70deg) saturate(80%) brightness(0.7) contrast(1.2);
         }
 
-        /* --- HEADER --- */
         .header-info { 
             position: fixed; 
             top: 16px; 
@@ -125,7 +124,7 @@
         .recenter-btn:hover { stroke: var(--g-accent-1); transform: scale(1.1); }
         .recenter-btn:active { transform: scale(0.95); }
 
-        /* --- DROPDOWN --- */
+        /* DROPDOWN */
         .custom-select-wrapper {
             position: relative;
             user-select: none;
@@ -200,7 +199,6 @@
             text-align: center;
         }
 
-        /* --- METRICS --- */
         .metrics-panel { 
             position: fixed; left: 16px; top: 80px; z-index: 900; 
             width: 140px; pointer-events: none; display: flex; flex-direction: column; gap: 8px;
@@ -217,7 +215,6 @@
             font-family: 'Share Tech Mono', monospace; font-size: 22px; font-weight: 500; color: var(--g-text-main); 
         }
 
-        /* --- LEGEND --- */
         .legend-panel {
             position: fixed; bottom: 20px; right: 20px; z-index: 900;
             background: var(--color-panel-bg); border: 1px solid var(--color-panel-border);
@@ -230,7 +227,6 @@
         .legend-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
         .legend-item span { font-size: 11px; color: var(--g-text-main); }
 
-        /* --- HUD / INFO PANEL --- */
         .info-panel {
             position: fixed; 
             bottom: 20px; 
@@ -241,7 +237,7 @@
             border: 1px solid var(--g-bg-2); 
             width: 460px; 
             max-width: 95vw;
-            height: 240px; /* Compact Height */
+            height: 240px; 
             opacity: 0; 
             pointer-events: none; 
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -257,13 +253,6 @@
             transform: translateX(-50%) translateY(0);
         }
         
-        /* Close Button */
-        .close-hud-btn {
-            position: absolute; top: 10px; right: 10px; color: var(--g-text-muted);
-            font-size: 24px; line-height: 20px; cursor: pointer; z-index: 50; padding: 5px;
-        }
-        .close-hud-btn:hover { color: var(--g-accent-1); }
-
         .pfd-data-overlay {
             position: absolute; top: 0; left: 0; width: 100%;
             padding: 16px 20px; display: flex; justify-content: space-between; 
@@ -274,13 +263,13 @@
             font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 700; color: var(--g-text-main); line-height: 1; padding: 2px;
         }
         .info-subtitle { 
-            font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: 700;
-            color: var(--g-text-main); letter-spacing: 1px; text-transform: uppercase; 
+            font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: 700;
+            color: var(--g-accent-1); letter-spacing: 1px; text-transform: uppercase; 
             margin-top: 2px; padding: 2px;        
         }
         .info-reg {
             font-family: 'Share Tech Mono', monospace; font-size: 14px; font-weight: 700;
-            color: var(--g-text-main); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; padding: 2px;
+            color: var(--g-text-muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; padding: 2px;
         }
         .pfd-heading-box { text-align: right; }
         .hdg-value { 
@@ -301,7 +290,6 @@
             font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 600; color: var(--g-text-muted); letter-spacing: 0.5px; text-transform: uppercase; 
         }
 
-        /* AHRS */
         #ahrs-full-display { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; background: var(--g-bg-5); }
         .ahrs-horizon-wrapper { width: 300%; height: 300%; position: absolute; top: -100%; left: -100%; will-change: transform; transition: transform 0.2s linear; }
         .ahrs-sky { width: 100%; height: 50%; background: var(--color-sky); position: absolute; top: 0; left: 0; }
@@ -309,8 +297,27 @@
         .ahrs-ladder { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 33.33%; height: 33.33%; opacity: 0.9; }
         .ahrs-crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 180px; height: 60px; z-index: 5; pointer-events: none; }
 
+        .target-reticle-icon { 
+            pointer-events: none; display: flex; align-items: center; justify-content: center; 
+        }
+
+        .reticle-ring {
+            position: absolute; 
+            width: 60px; height: 60px;
+            border: 4px solid var(--g-accent-1); 
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--g-accent-1), inset 0 0 10px var(--g-accent-1);
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.0); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
         .pfd-route-overlay {
-            position: absolute; top: 16px; /* Compact Position */
+            position: absolute; top: 16px; /* Compact */
             left: 0; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 25;
         }
         .route-box {
@@ -398,7 +405,6 @@
     </div>
 
     <div id="info-panel" class="info-panel">
-        <div class="close-hud-btn" onclick="hideInfoBox()">×</div>
         <div id="aircraft-info" style="display: none; height: 100%;">
             <div id="ahrs-full-display">
                 <div id="ahrs-horizon" class="ahrs-horizon-wrapper">
@@ -471,7 +477,6 @@
                 MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 RADAR: 'https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
                 ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`,
-                // UPDATED PROD URL
                 AWS_PROXY: 'https://yd7ndqoiq5.execute-api.us-east-1.amazonaws.com/prod/'
             },
             PATHS: {
@@ -543,11 +548,12 @@
             
             state.map.on('click', (e) => {
                 if (e.originalEvent.target.closest('.leaflet-marker-icon')) return;
-                const wasFollowing = state.isFollowing || state.selectedItem;
-                // Don't hide immediately if clicking another plane
-                // But if clicking map blank space:
-                if (!wasFollowing) hideInfoBox();
                 
+                const wasFollowing = state.isFollowing || state.selectedItem;
+                if (wasFollowing) {
+                    recenterView(); // Clears everything and resets view
+                }
+
                 if (state.audioElement.paused) {
                     state.audioElement.muted = false;
                     state.audioElement.play().then(()=>{ 
@@ -734,7 +740,6 @@
                 const url = `${CONFIG.URLS.AWS_PROXY}?callsign=${callsign.trim()}`;
                 const res = await fetch(url);
                 
-                // If 500 error, likely rate limit or key issue, don't retry
                 if (!res.ok) {
                      routeCache.set(callsign, { dep: "---", arr: "---" });
                      updateRouteUI("---", "---");
@@ -754,7 +759,6 @@
                     updateRouteUI("---", "---");
                 }
             } catch (e) {
-                // Cache error state to prevent loop
                 routeCache.set(callsign, { dep: "---", arr: "---" });
                 updateRouteUI("---", "---");
             }
@@ -811,14 +815,13 @@
             }
             document.getElementById('info-panel').classList.add('visible');
         }
-        
-        // Global function for the Close Button
-        window.hideInfoBox = function() {
+
+        function hideInfoBox() {
             state.isFollowing = false; 
             state.selectedItem = null; 
             document.getElementById('info-panel').classList.remove('visible');
             if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
-        };
+        }
 
         function updateAHRSDisplay(data) {
             const bank = data.pseudoBank||0; const pitch = data.pseudoPitch||0;
