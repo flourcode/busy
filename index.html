@@ -699,9 +699,13 @@
 
         function updatePlaneMarker(ac, trail) {
             if(state.selectedItem===ac.hex && state.isFollowing) {
-                state.map.panTo([ac.lat,ac.lon]);
-                if(layers.reticle) layers.reticle.setLatLng([ac.lat,ac.lon]);
-            }
+    // Follow the plane with the correct mobile offset
+    const center = getOffsetCenter(ac.lat, ac.lon);
+    state.map.panTo(center); // <--- NEW
+    
+    // But keep the reticle circle on the ACTUAL plane location
+    if(layers.reticle) layers.reticle.setLatLng([ac.lat,ac.lon]);
+}
             let col=CONFIG.COLORS.OTHER, type='other';
             if(ac.category==='A7'){type='heli';col=CONFIG.COLORS.HELI;}
             else if(['A3','A4','A5'].includes(ac.category)){type='comm';col=CONFIG.COLORS.COMM;}
@@ -817,7 +821,27 @@
             document.getElementById('ac-stat').textContent = status;
             updateAHRSDisplay(data);
         }
-
+// Calculates a "Visual Center" that sits above the HUD
+function getOffsetCenter(lat, lon, targetZoom) {
+    // Only apply offset on mobile screens (< 600px)
+    if (window.innerWidth < 600) {
+        const z = targetZoom || state.map.getZoom();
+        
+        // 1. Convert Lat/Lon to pixel coordinates at the target zoom
+        const point = state.map.project([lat, lon], z);
+        
+        // 2. Add a vertical offset (pixels)
+        // Shift the map center DOWN by 150px, which pushes the plane UP
+        const offsetPoint = point.add([0, 150]); 
+        
+        // 3. Convert pixels back to Lat/Lon
+        const newCenter = state.map.unproject(offsetPoint, z);
+        return [newCenter.lat, newCenter.lng];
+    }
+    
+    // On desktop, center normally
+    return [lat, lon];
+}
         function showInfo(type, data) {
             state.selectedItem = data.hex || data.mmsi || data.incident_number; state.isFollowing = true;
             document.getElementById('aircraft-info').style.display='none';
@@ -834,7 +858,9 @@
                 
                 document.getElementById('ahrs-full-display').style.display='block';
                 document.getElementById('aircraft-info').style.display='block';
-                state.map.flyTo([data.lat,data.lon], 11, {duration:0.8});
+                // Use offset center so plane appears above the panel on mobile
+const center = getOffsetCenter(data.lat, data.lon, 11);
+state.map.flyTo(center, 11, {duration:0.8});
             }
             document.getElementById('info-panel').classList.add('visible');
         }
