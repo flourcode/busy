@@ -423,7 +423,7 @@
 
     .pfd-route-overlay {
         position: absolute; top: 4px; 
-        left: 0; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 25;
+        left: 0; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 25; display: none;
     }
     .route-box {
         background-color: rgba(13, 31, 25, 0.3); border: 1px solid var(--g-bg-2);
@@ -537,10 +537,8 @@
 
 <div class="bottom-controls">
     <div id="radar-control" class="control-btn panel-style active">RADAR: ON</div>
-    <div id="audio-control" class="audio-control panel-style">
-        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-        <span class="audio-text" id="audio-text">ATC OFFLINE</span>
-    </div>
+    <div id="user-location-btn" class="control-btn panel-style" onclick="toggleUserLocation()">USE MY LOCATION</div>
+    <div id="speech-control" class="control-btn panel-style active" onclick="toggleSpeech()">SPEECH: ON</div>
 </div>
 
     <div class="metrics-panel">
@@ -624,8 +622,6 @@
         </div>
     </div>
 
-    <audio id="audio" preload="none"></audio>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const CONFIG = {
@@ -668,7 +664,7 @@
 
         const state = {
             location: 'JFK', map: null, isRadarOn: true, selectedItem: null, isFollowing: false,
-            audioElement: document.getElementById('audio')
+            useUserLocation: false, userCoords: null, speechEnabled: true
         };
         const layers = {
             base: null, radar: null,
@@ -683,9 +679,9 @@
             startTracking();
             setupEventListeners();
             updateClock(); setInterval(updateClock, 1000);
-            autoStartAudio();
             setupCustomDropdown();
 			SearchSystem.init();
+            requestUserLocation();
         }
 
         function initMap() {
@@ -699,7 +695,6 @@
         function initializeRadarOn() { layers.radar.addTo(state.map); document.getElementById('radar-control').classList.add('active'); }
 
         function setupEventListeners() {
-            document.getElementById('audio-control').addEventListener('click', toggleAudio);
             document.getElementById('radar-control').addEventListener('click', toggleRadar);
             document.getElementById('recenter-btn').addEventListener('click', recenterView);
             
@@ -708,17 +703,24 @@
                 
                 const wasFollowing = state.isFollowing || state.selectedItem;
                 if (wasFollowing) {
-                    recenterView(); // Clears everything and resets view
-                }
-
-                if (state.audioElement.paused) {
-                    state.audioElement.muted = false;
-                    state.audioElement.play().then(()=>{ 
-                        document.getElementById('audio-control').classList.add('playing'); 
-                        document.getElementById('audio-text').textContent='ATC LIVE'; 
-                    }).catch(()=>{});
+                    recenterView();
                 }
             });
+        }
+
+        function toggleSpeech() {
+            state.speechEnabled = !state.speechEnabled;
+            const btn = document.getElementById('speech-control');
+            if (state.speechEnabled) {
+                btn.classList.add('active');
+                btn.textContent = 'SPEECH: ON';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = 'SPEECH: OFF';
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            }
         }
 
         function setupCustomDropdown() {
@@ -765,7 +767,6 @@
             updateLocationTitle();
             state.map.setView([loc.viewLat||loc.lat, loc.viewLon||loc.lon], loc.zoom);
             updateLocationMarker(); clearMapData(); hideInfoBox();
-            handleAudioChange(loc.audio);
             if(state.isRadarOn) layers.radar.addTo(state.map);
         }
         function updateLocationMarker() {
@@ -788,10 +789,48 @@
             updateStats();
         }
 
+        function requestUserLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        state.userCoords = { lat: position.coords.latitude, lon: position.coords.longitude };
+                    },
+                    (error) => { console.log('Geolocation error:', error.message); }
+                );
+            }
+        }
+
+        function toggleUserLocation() {
+            if (!state.userCoords) {
+                alert('Location not available. Please enable location services and reload.');
+                return;
+            }
+            state.useUserLocation = !state.useUserLocation;
+            const btn = document.getElementById('user-location-btn');
+            if (state.useUserLocation) {
+                btn.classList.add('active');
+                btn.textContent = 'MY LOCATION';
+                state.map.setView([state.userCoords.lat, state.userCoords.lon], 10);
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = 'USE MY LOCATION';
+                const loc = CONFIG.LOCATIONS[state.location];
+                state.map.setView([loc.viewLat||loc.lat, loc.viewLon||loc.lon], loc.zoom);
+            }
+        }
+
         async function fetchPlanes() {
             try {
-                const l = CONFIG.LOCATIONS[state.location];
-                const res = await fetch(CONFIG.URLS.ADSB(l.lat, l.lon));
+                let lat, lon;
+                if (state.useUserLocation && state.userCoords) {
+                    lat = state.userCoords.lat;
+                    lon = state.userCoords.lon;
+                } else {
+                    const l = CONFIG.LOCATIONS[state.location];
+                    lat = l.lat;
+                    lon = l.lon;
+                }
+                const res = await fetch(CONFIG.URLS.ADSB(lat, lon));
                 const data = await res.json();
                 if(!data.ac) return;
                 const active = new Set();
@@ -1006,6 +1045,19 @@ function getOffsetCenter(lat, lon, targetZoom) {
                 // Use offset center so plane appears above the panel on mobile
 const center = getOffsetCenter(data.lat, data.lon, 11);
 state.map.flyTo(center, 11, {duration:0.8});
+
+                // Web Speech API
+                if (state.speechEnabled && 'speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const callsign = data.flight?.trim() || data.hex;
+                    const type = AIRCRAFT_TYPES[data.t || 'UNK'] || data.t || 'Unknown';
+                    const reg = data.r || 'Unknown registration';
+                    const utterance = new SpeechSynthesisUtterance(`Aircraft ${callsign}. Type: ${type}. Registration: ${reg}`);
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 0.8;
+                    window.speechSynthesis.speak(utterance);
+                }
             }
             document.getElementById('info-panel').classList.add('visible');
         }
@@ -1015,6 +1067,7 @@ state.map.flyTo(center, 11, {duration:0.8});
             state.selectedItem = null; 
             document.getElementById('info-panel').classList.remove('visible');
             if(layers.reticle) { state.map.removeLayer(layers.reticle); layers.reticle=null; }
+            if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
         }
 
         function updateAHRSDisplay(data) {
@@ -1096,15 +1149,12 @@ const SearchSystem = {
 };
 
         function toggleRadar() { state.isRadarOn=!state.isRadarOn; const b=document.getElementById('radar-control'); if(state.isRadarOn){layers.radar.addTo(state.map);b.classList.add('active');b.textContent='RADAR: ON';}else{layers.radar.remove();b.classList.remove('active');b.textContent='RADAR: OFF';} }
-        function toggleAudio() { if(state.audioElement.paused){state.audioElement.play();document.getElementById('audio-control').classList.add('playing');document.getElementById('audio-text').textContent='ATC LIVE';}else{state.audioElement.pause();document.getElementById('audio-control').classList.remove('playing');document.getElementById('audio-text').textContent='ATC OFFLINE';} }
-        function handleAudioChange(u) { const p=!state.audioElement.paused; state.audioElement.src=u; if(p)state.audioElement.play().catch(()=>{}); else {document.getElementById('audio-control').classList.remove('playing');document.getElementById('audio-text').textContent='ATC OFFLINE';} }
-        function autoStartAudio() { state.audioElement.src=CONFIG.LOCATIONS[state.location].audio; state.audioElement.muted=true; state.audioElement.play().then(()=>{setTimeout(()=>{state.audioElement.muted=false;document.getElementById('audio-text').textContent='ATC LIVE';},500);document.getElementById('audio-control').classList.add('playing');}).catch(()=>{}); }
         
         function updateLocationTitle() { document.getElementById('location-title').textContent = CONFIG.LOCATIONS[state.location].name; }
         function updateStats() { document.getElementById('aircraft-count').textContent=layers.planes.data.size; }
         function updateClock() { const d=new Date(); document.getElementById('current-time').textContent=`${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`; }
         
-        function startTracking() { fetchPlanes(); setInterval(fetchPlanes,3000); }
+        function startTracking() { fetchPlanes(); setInterval(fetchPlanes,10000); }
         
         init();
     </script>
