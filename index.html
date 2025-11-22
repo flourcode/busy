@@ -629,7 +629,6 @@
                 MAP: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 RADAR: 'https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png',
                 ADSB: (lat, lon) => `https://api.airplanes.live/v2/point/${lat}/${lon}/50`,
-                AWS_PROXY: 'https://yd7ndqoiq5.execute-api.us-east-1.amazonaws.com/prod/'
             },
             PATHS: {
                 PLANE: "M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"
@@ -1052,10 +1051,40 @@ state.map.flyTo(center, 11, {duration:0.8});
                     const callsign = data.flight?.trim() || data.hex;
                     const type = AIRCRAFT_TYPES[data.t || 'UNK'] || data.t || 'Unknown';
                     const reg = data.r || 'Unknown registration';
-                    const utterance = new SpeechSynthesisUtterance(`Aircraft ${callsign}. Type: ${type}. Registration: ${reg}`);
-                    utterance.rate = 0.9;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 0.8;
+                    
+                    // Determine flight phase
+                    const vs = data.baro_rate || 0;
+                    const alt = typeof data.alt_baro === 'number' ? data.alt_baro : 0;
+                    let phase = "cruising";
+                    if(data.alt_baro === "ground") {
+                        phase = "on the ground";
+                    } else if (vs > 300) {
+                        phase = alt < 2000 ? "on takeoff" : "climbing";
+                    } else if (vs < -300) {
+                        if (alt < 800) phase = "on landing";
+                        else if (alt < 4000) phase = "on approach";
+                        else phase = "descending";
+                    }
+                    
+                    const utterance = new SpeechSynthesisUtterance(
+                        `${type}. Callsign ${callsign}. ${phase}.`
+                    );
+                    
+                    // More realistic voice settings
+                    utterance.rate = 1.0;      // Natural speaking speed
+                    utterance.pitch = 0.95;    // Slightly lower pitch for authority
+                    utterance.volume = 1.0;    // Full volume
+                    
+                    // Try to select a better voice if available
+                    const voices = window.speechSynthesis.getVoices();
+                    const preferredVoice = voices.find(voice => 
+                        voice.lang.startsWith('en-') && 
+                        (voice.name.includes('Male') || voice.name.includes('Google') || voice.name.includes('Microsoft'))
+                    );
+                    if (preferredVoice) {
+                        utterance.voice = preferredVoice;
+                    }
+                    
                     window.speechSynthesis.speak(utterance);
                 }
             }
